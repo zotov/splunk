@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true">
+	<contextName>server-node</contextName>
+
+	<!-- Uncomment if you are using the logback plugin for eclipse <consolePlugin/> -->
+	<!-- possible levels (TRACE, DEBUG, INFO, WARN and ERROR) -->
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>DEBUG</level>
+		</filter>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<!--<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %msg%n</pattern> -->
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %logger - %msg%n
+			</pattern>
+		</encoder>
+	</appender>
+
+	
+			
+	<!-- TRACE, DEBUG, INFO, WARN, ERROR, ALL or OFF -->
+	<!-- the level of the root level is set to DEBUG by default -->
+	<root>
+		<level value="INFO" />
+		<appender-ref ref="CONSOLE" />
+	</root>	
+	
+	<logger name="com.buildua.maven.plugins.MainApp">
+		<level value="DEBUG" />
+	</logger>	
+	
+</configuration>
