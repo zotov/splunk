@@ -8,9 +8,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -49,16 +51,32 @@ public class CompressUa {
 	private String pagePathDir="/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/server-node/WEB-INF/pages";
 
 	private String unionCssDirPath="/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/tmp/WEB-INF/resources/css/";
+	
 	private String unionJsDirPath="/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/tmp/WEB-INF/resources/js/";
+	
+    private final String RESOURCE_ROOT_DIR="WEB-INF";
+        
+    private final String cssReference="<link href=\"${resourceUrl}/css/#\" rel=\"stylesheet\" type=\"text/css\" />";
+    
+    private final String jsReference="<script src=\"${resourceUrl}/js/#\" type=\"text/javascript\"></script>";
 
 	
 	private String[][] resourcesCompress; //{{result.js, script1.js, script2.js, script3.js,...},{result.css, style1.css, styel2.css,...}}
 		
+	//root path, css file
 	private Map<String,List<File>>cssFileMap=new HashMap<String,List<File>>();
-	
+	//root path, js file
 	private Map<String,List<File>>jsFileMap=new HashMap<String,List<File>>();
-	
+	//root path, jsp file
 	private Map<String,List<File>>jspFileMap=new HashMap<String,List<File>>();
+	//root path, 
+	private Map<String,List<File>>jspURFileMap=new HashMap<String,List<File>>();
+	
+	private Set<File>cssURFileList=new HashSet<File>();
+	
+	private Set<File>jsURFileList=new HashSet<File>();
+	
+	boolean deleteUNR=false;
 	
 	private Map<String,Map<String,List<String>>>resourceMapFile=new HashMap<String,Map<String,List<String>>>();
 	
@@ -82,6 +100,10 @@ public class CompressUa {
 		File srcWarFile = new File(srcWarPath + File.separator + srcWarName);
 				
 		try {
+			
+			if(dstWarFile.exists()){
+				dstWarFile.delete();
+			}
 			dstWarFile.createNewFile();
 			
 			if (!srcWarFile.exists()) {
@@ -125,7 +147,7 @@ public class CompressUa {
 				
 				File copyDir = new File(copyPackagePath);
 				if(!copyDir.exists()) {
-					throw new IOException("dir not exists:"+copyDir.getAbsolutePath());
+					throw new IOException("dir not exists:" + copyDir.getAbsolutePath());
 				}
 
 				// Copy resource from srcDir
@@ -152,7 +174,9 @@ public class CompressUa {
 				log.info("jsFileMap size:"+this.jsFileMap.size());
 				log.info("cssFileMap size:"+this.cssFileMap.size());
 				
-				this.processJspMap(jspFileMap);
+				this.processJspMap(jspFileMap);				
+				
+				this.copyUNRtoJar(compressJarOutputStream);
 				
 			} catch (Exception ex) {
 				log.error("createCompressJarFile",ex);
@@ -250,7 +274,10 @@ public class CompressUa {
 		if("jsp".equals(fileExt)) {
 		   List<String> fileLines= FileUtils.readLines(file, "UTF-8");
 		   for(String line: fileLines) {
-			   if(line.toLowerCase().matches(this.resourceFilePattern)){
+			   if(line.toLowerCase().matches(this.resourceFilePattern)) {
+				   
+				   this.makesJspFileUnResource(file, rootFolderName);
+				   
 				   if(this.jspFileMap.containsKey(filePath)){
 					   this.jspFileMap.get(filePath).add(file);
 					} else {
@@ -268,7 +295,7 @@ public class CompressUa {
 	}
 	
 	private void copyToTmpDir(final File file,final String rootFolderName) throws IOException {
-		String filePackagePath= file.getAbsolutePath();
+		   String filePackagePath= file.getAbsolutePath();
 		   filePackagePath = filePackagePath.substring(filePackagePath.indexOf(rootFolderName),filePackagePath.length());
 		   File tmpPackageDir= new File(tmpDir + File.separator + FilenameUtils.getPath(filePackagePath));
 		   if(!tmpPackageDir.exists()) {
@@ -280,6 +307,35 @@ public class CompressUa {
 		   
 		   FileUtils.copyFile(file, tmpFile);
 		   log.info("copy to :{}",tmpFile);
+	}
+	
+	private void makesJspFileUnResource(final File file, final String rootFolderName)throws IOException {
+		   String filename=file.getName().replace(".jsp", "UNR.jsp");
+		   
+		   String filePackagePath= file.getAbsolutePath();
+		   filePackagePath = filePackagePath.substring(filePackagePath.indexOf(rootFolderName),filePackagePath.length());
+		   File tmpPackageDir= new File(tmpDir + File.separator + FilenameUtils.getPath(filePackagePath));
+		   if(!tmpPackageDir.exists()) {
+			  if(!tmpPackageDir.mkdirs()) {
+				  throw new IOException("cannot create dir:"+tmpPackageDir.getAbsolutePath());
+			  }
+		   }		 
+		 		   
+		   File fileUn  = new File(tmpPackageDir.getAbsolutePath()  + File.separator + filename);
+		   if(fileUn.exists()) {
+			   FileUtils.deleteQuietly(fileUn);
+		   }
+		   boolean  result = fileUn.createNewFile();
+		   String basedir=FilenameUtils.getFullPath(fileUn.getAbsolutePath());
+		   if(this.jspURFileMap.containsKey(basedir)) {
+			  this.jspURFileMap.get(basedir).add(fileUn); 
+		   } else {
+			   List<File> fileList=new ArrayList<File> ();
+			   fileList.add(fileUn);
+			   this.jspURFileMap.put(basedir, fileList);
+		   }
+		   
+		   log.info("create fileUn to {}:{}",result,fileUn.getAbsolutePath());
 	}
 	
 	private void getResourceFileNameOrdered(final File file, final String pageDirPath) throws IOException {
@@ -301,16 +357,15 @@ public class CompressUa {
 			   log.info("add resource:{}",resourcePath);
 		    }
 		    if(line.matches(this.jsResourceFilePattern)) {
-				   int index1=line.indexOf("/js");
-				   int index2=line.indexOf(".js", index1);
-				   if(index1 < 0 || index2 < 0) {
-					   continue;
-				   }
-				   String resourcePath=line.substring(index1,index2 + 3);
-				   jsResourceList.add(resourcePath);
-				   log.info("add resource:{}",resourcePath);
+			   int index1=line.indexOf("/js");
+			   int index2=line.indexOf(".js", index1);
+			   if(index1 < 0 || index2 < 0) {
+				   continue;
+			   }
+			   String resourcePath=line.substring(index1,index2 + 3);
+			   jsResourceList.add(resourcePath);
+			   log.info("add resource:{}",resourcePath);
 			}
-		    
 		}
 		resourceList.put("css",cssResourceList);
 		log.info("{}:css size:{}",pageResourceBaseDir,cssResourceList.size());
@@ -326,21 +381,37 @@ public class CompressUa {
 		for(String dirPath:jspFileMap.keySet()) {
 			List<File> jspFileList=jspFileMap.get(dirPath);
 			for(File jspFile:jspFileList) {
+			   boolean addUnJS=true;
+			   boolean addUnCss=true;
+			   File fileUNR = this.getJspUNRFile(FilenameUtils.getFullPath(jspFile.getAbsolutePath()), FilenameUtils.getBaseName(jspFile.getAbsolutePath()));
 			   List<String> fileStringList = FileUtils.readLines(jspFile);
+			   
 			   for(String fileString:fileStringList) {
 				  int index1=0;
 				  int index2=0;
+				  
 				  if(fileString.matches(cssResourceFilePattern)) {
 					  index1=fileString.indexOf("/");
 					  index2=fileString.indexOf(".css")+4;
 					  cssResourceList.add(fileString.substring(index1,index2));
+     				  if(addUnCss) {
+						  addUnCss=false;
+						  this.addDeclarationOfUnResource(fileUNR,FilenameUtils.getBaseName(jspFile.getName()),"css");
+					  }					 
 					  continue;
 				  }
+				 
 				  if(fileString.matches(jsResourceFilePattern)) {
 					 index1=fileString.indexOf("/");
 					 index2=fileString.indexOf(".js")+3;
 					 jsResourceList.add(fileString.substring(index1,index2));
-				  }			  
+					 if(addUnJS) {
+						  addUnJS=false;
+						  this.addDeclarationOfUnResource(fileUNR,FilenameUtils.getBaseName(jspFile.getName()),"js");
+					 }
+					 continue;
+				  }	
+				  FileUtils.write(fileUNR, fileString+"\n\r",true);
 			   }
 			   log.info("jsp file:{}",jspFile.getAbsolutePath());
 			   log.info("css files:{}",cssResourceList);
@@ -351,6 +422,8 @@ public class CompressUa {
 			   jsResourceList.clear();
 			}
 		}
+		
+		this.replaceUNResources();
 	}
 	
 	private void makeUnionResource(final File jspFile,final Map<String, List<File>> resourceFileMap,final List<String>resourceList,final String ext,final String resourceRoot) throws IOException {
@@ -358,19 +431,24 @@ public class CompressUa {
 		String unionResourceFileName=FilenameUtils.getBaseName(jspFile.getName()) + ext;
 		File unionResourceFile=new File(resourceRoot+unionResourceFileName);
 		if(unionResourceFile.exists()) {
-		  unionResourceFile.delete();
+		    unionResourceFile.delete();
 		}
 		unionResourceFile.createNewFile();
 		for(String jspCssResource:resourceList) {
 			boolean endLoop=false;
 		    for(List<File> cssFileList: resourceFileMap.values()){
 			    for(File cssFile:cssFileList) {
-			   	    if(cssFile.getAbsolutePath().contains(jspCssResource)) {
-			   	    
-						 FileUtils.writeStringToFile(unionResourceFile, "\r\n//# "+cssFile.getAbsolutePath()+"\r\n",true);						
-						 FileUtils.writeByteArrayToFile(unionResourceFile, FileUtils.readFileToByteArray(cssFile), true);
-						 endLoop=true;
-						 break;
+			   	    if(cssFile.getAbsolutePath().contains(jspCssResource)) {			   	    
+					   FileUtils.writeStringToFile(unionResourceFile, "\r\n//# "+cssFile.getAbsolutePath()+"\r\n",true);						
+					   FileUtils.writeByteArrayToFile(unionResourceFile, FileUtils.readFileToByteArray(cssFile), true);
+					   if(ext.equals(".js")) {
+						   this.jsURFileList.add(unionResourceFile);
+					   }
+					   if(ext.equals(".css")) {
+						   this.cssURFileList.add(unionResourceFile);
+					   }
+					   endLoop=true;
+					   break;
 					}			   	    
 				}
 			    if(endLoop) {
@@ -380,6 +458,93 @@ public class CompressUa {
 			}
 		}	
 		log.info("union *{} resource:{}",ext,unionResourceFile);
+	}
+	
+	File getJspUNRFile(final String basedir,final String baseFileName) {
+		String relativePath;
+		int index=basedir.indexOf(RESOURCE_ROOT_DIR);
+		if(index == 0) {
+			throw new IllegalArgumentException("dir: " + RESOURCE_ROOT_DIR + " not found in:" + basedir);
+		}
+		
+		relativePath=basedir.substring(index,basedir.length());
+		  
+		for(String path:this.jspURFileMap.keySet()) {
+			if(path.contains(relativePath)) {
+			    List<File> fileList=this.jspURFileMap.get(path);
+				for(File file:fileList) {
+					if(FilenameUtils.getBaseName(file.getAbsolutePath()).equals((baseFileName+"UNR"))) {
+						return file;
+					}
+				}
+			}
+		}
+		throw new IllegalArgumentException("filename: " + baseFileName + " not found");
+	}
+	
+	public void addDeclarationOfUnResource(final File file,final String filename,final String type) throws IOException {
+		 String refer="";
+		 
+		if(type.toLowerCase().equals("css")) {
+		   refer=this.cssReference.replace("#",filename + "." + type);
+		} else {
+		   refer=this.jsReference.replace("#",filename + "." + type);	
+		}
+		FileUtils.write(file, refer+"\n\r",true);		
+	}
+	
+	public void replaceUNResources() throws IOException {
+		for(List<File> fileList:this.jspURFileMap.values()) {
+			for(File file: fileList) {
+				String path=FilenameUtils.getFullPath(file.getAbsolutePath());
+				String filename=file.getName().replace("UNR.jsp", ".jsp");
+				File srcJsp=new File(path + File.separator + filename);
+				FileUtils.copyFile(file, srcJsp);
+				if(this.deleteUNR) {
+				   file.delete();
+				}
+			}
+		}
+	}
+	
+	public void copyUNRtoJar(final JarOutputStream compressJarOutputStream) throws IOException {
+		
+		for(List<File> fileList:this.jspURFileMap.values()) {
+			for(File file: fileList) {
+				String path = file.getAbsolutePath();
+				
+				String srcPath=path.replace("UNR.jsp", ".jsp");
+				File fileSrc=new File(srcPath);
+				//String name = File.separator + path.substring(path.indexOf(rootName),path.length());
+				//String name = path.substring(path.indexOf(RESOURCE_ROOT_DIR),path.length());
+				//name=name.replace("UNR.jsp", ".jsp");
+				//File fileSrc=new File(name);
+				this.writeEntryToJar( fileSrc, compressJarOutputStream);
+			}
+		}
+		
+		for(File file:this.cssURFileList) {
+		  this.writeEntryToJar(file, compressJarOutputStream);			
+		}
+		
+		for(File file:this.jsURFileList) {
+		  this.writeEntryToJar(file, compressJarOutputStream);			
+		}
+		
+	}
+	
+	private void writeEntryToJar(final File srcFile,final JarOutputStream compressJarOutputStream) throws IOException {
+		String path = srcFile.getAbsolutePath();
+		String nameEntry = path.substring(path.indexOf(RESOURCE_ROOT_DIR),path.length());
+		JarEntry entry = new JarEntry(nameEntry);
+		compressJarOutputStream.putNextEntry(entry);
+		
+
+		InputStream entryInputStream = new FileInputStream(srcFile);
+		IOUtils.copy(entryInputStream, compressJarOutputStream);
+		
+		compressJarOutputStream.flush();
+		log.info("add entry:" + nameEntry);
 	}
 	
 
