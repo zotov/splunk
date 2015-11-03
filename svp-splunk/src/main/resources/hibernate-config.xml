@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:lang="http://www.springframework.org/schema/lang"
+	xmlns:util="http://www.springframework.org/schema/util" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:cache="http://www.springframework.org/schema/cache"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+                           http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang-4.1.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.1.xsd
+                           http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.1.xsd
+						   http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache-4.1.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.1.xsd">
+ 
+	
+		 	
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${database.driverClassName}" />
+		<property name="url" value="${database.url}" />
+		<property name="username" value="${database.username}" />
+		<property name="password" value="${database.password}" />
+		<!-- The initial number of connections that are created when the pool is 
+			started. -->
+		<!--<property name="initialSize" value="5"/> -->
+		<property name="maxActive" value="100" />			<!-- max allowed. note that MySql workbench etc may need connections -->
+		<property name="maxIdle" value="60" />				<!-- The # that can be returned to the idle pool. Set to "maxActive" & use 
+			jprofiler to see pool size needed -->
+		<!--<property name="whenExhaustedAction" value="WHEN_EXHAUSTED_BLOCK" /> -->
+		<property name="maxWait" value="15000" />			<!-- Apache DBCP writeup says GC can take 15 seconds & tie up connection 
+			requests -->
+		<property name="defaultAutoCommit" value="true" />	<!-- Commit transactions unless they explicitly turn it off -->
+		<property name="validationQuery" value="select 1" />	<!-- Query to use to test connections -->
+		<property name="removeAbandoned" value="false" />	<!-- Check open connections to see if they are from a crash -->
+		<property name="removeAbandonedTimeout" value="60" /> <!-- How many seconds between abandoned connection tests -->
+		<property name="logAbandoned" value="false" />		<!-- Show stack trace. This slows things so use only to find & fix problems -->
+		<property name="testOnReturn" value="true" />		<!-- Validate a connection before returning it. -->
+		<property name="testOnBorrow" value="false" />		<!-- This is SLOW. See if idle testing & testOnReturn is enough -->
+		<property name="numTestsPerEvictionRun" value="3" />				<!-- Test NN connections in the pool each eviction run -->
+		<property name="timeBetweenEvictionRunsMillis" value="10000" />	<!-- MS between idle pool validation runs -->
+		<property name="minEvictableIdleTimeMillis" value="-1" />		<!-- Negative to just leave idle connections in idle pool -->
+		<property name="testWhileIdle" value="true" />		<!-- Test connections in the pool to keep them open. -->
+		<!--<property name="softMinEvictableIdleTimeMillis" value="-1"/> -->	<!-- Negative to just leave idle connections in idle pool -->
+		<!--<property name="lifo" value="false"/> -->			<!-- "false" = FIFO (pool returns oldest idle connection) -->
+	</bean>
+	
+	<bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+	
+		<property name="dataSource" ref="dataSource" />
+		
+		<property name="annotatedClasses">
+			<list>
+			   <value>com.soft.industry.entity.InvoiceEnt</value>
+			   <value>com.soft.industry.entity.InvoiceNum</value>
+			   <value>com.soft.industry.entity.InvoiceDate</value>
+			   <value>com.soft.industry.entity.Employee</value>
+			   <value>com.soft.industry.entity.Department</value>
+			   <value>com.soft.industry.entity.Country</value>
+			   <value>com.soft.industry.entity.EDC</value>
+			</list>
+		</property>
+		
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+<!-- 				<prop key="hibernate.hbm2ddl.auto">update</prop> -->
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="hibernate.format_sql">true</prop>
+				<prop key="hibernate.jdbc.batch_size">50</prop>
+				<prop key="hibernate.cache.provider_class">net.sf.ehcache.hibernate.EhCacheRegionFactory</prop>
+				<prop key="hibernate.cache.use_second_level_cache">true</prop>
+				<prop key="hibernate.cache.provider_class">net.sf.ehcache.hibernate.SingletonEhCacheProvider
+				</prop>
+				<!-- Caching needs some additional research for optimization... <prop  -->
+				<!-- key="hibernate.cache.use_query_cache">true</prop> <prop key="hibernate.cache.region.factory_class">net.sf.ehcache.hibernate.EhCacheRegionFactory</prop> -->
+			</props>
+		</property>
+		<!-- <property name="eventListeners">
+          <map>
+            <entry key="post-load">
+                <bean class="com.soft.industry.company.CountryListener"></bean>
+            </entry>
+        </map>
+    </property> -->
+	</bean>
+
+	<bean id="transactionManager"  class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+		<property name="defaultTimeout" value="30000" /><!-- sec -->
+	</bean>
+	
+</beans>

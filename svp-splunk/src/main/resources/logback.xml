@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true">
+	<contextName>SienaXslt</contextName> 
+	
+	
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>INFO</level>
+		</filter>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<!--<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %msg%n</pattern> -->
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %logger[%line] - %msg%n
+			</pattern>
+		</encoder>
+	</appender>
+
+	<!-- Uncomment if you are using the logback plugin for eclipse 	<consolePlugin/> -->
+	<!-- possible levels (TRACE, DEBUG, INFO, WARN and ERROR) -->	
+	
+	<appender name="SPLUNK_TASK" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>log/splunk-loghandler.log</file>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS}[%thread] %logger[%line] - %msg%n</pattern>
+		</encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>log/splunk-loghandler.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+			<!-- keep 30 days worth of history -->
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+	</appender>
+	
+	<appender name="ERROR_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>log/error-loghandler.log</file>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS}[%thread] %logger[%line] - %msg%n</pattern>
+		</encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>log/error-loghandler.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+			<!-- keep 30 days worth of history -->
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+	</appender>
+		
+	<!-- TRACE, DEBUG, INFO, WARN, ERROR, ALL or OFF -->
+	<!-- the level of the root level is set to DEBUG by default -->
+	
+	<root>
+		<level value="INFO"/>
+		<appender-ref ref="CONSOLE" />
+    </root>
+	
+	<logger name="com.soft.industry.action.save.SaveInvoiceAnnot">
+		<level value="DEBUG"/>
+		<appender-ref ref="SPLUNK_TASK"/>		
+	</logger>
+	
+	<logger name="com.soft.industry.thread.annotation.Semaphore">
+   	    <level value="DEBUG"/>
+		<appender-ref ref="SPLUNK_TASK"/>		
+	</logger>
+	
+	<logger name="com.soft.industry.thread.annotation.SaveRec">
+  	    <level value="INFO"/>
+		<appender-ref ref="SPLUNK_TASK"/>		
+	</logger>
+	
+	<logger name="com.soft.industry.thread.annotation.save.SaveRecSer">
+	    <level value="INFO"/>
+		<appender-ref ref="SPLUNK_TASK"/>		
+	</logger>
+	
+	<logger name="com.soft.industry.dao.InvoiceDaoManualImpl">
+	    <level value="INFO"/>
+		<appender-ref ref="SPLUNK_TASK"/>		
+	</logger>
+	
+	<logger name="ERROR_LOG">
+  	    <level value="INFO"/>
+		<appender-ref ref="ERROR_LOG"/>		
+	</logger>
+
+</configuration>

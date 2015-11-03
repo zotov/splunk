@@ -1,0 +1,61 @@
+1. Add file -> add to index
+2. commit -> pull -> push up to stream
+3. revert to revision
+   3.1 menu -> replace with previous revision
+   3.2 History -> Revert Commit 
+4.make new branch -> push branch
+
+
+#ignore to commit
+to leave the file in the repo but ignore future changes to it:
+
+git update-index --assume-unchanged <file>
+and to undo this:
+
+git update-index --no-assume-unchanged <file>
+to find out which files have been set this way:
+
+git ls-files -v|grep '^h'
+
+#checkout branch
+git checkout -b master --track origin/master
+
+#revert marge
+git merge --abort
+git reset --merge ORIG_HEAD
+
+
+#revert previous commit
+git reset --hard HEAD~1
+
+--soft indicates that the uncommitted files should be retained as working files opposed to --hard which would discard them.
+HEAD~1 is the last commit. If you want to rollback 3 commits you could use HEAD~3. If you want to rollback to a specific revision number, you could also do that using its SHA hash.
+
+
+#remove file from repository but not remove from folder
+git rm --cached -r mydirectory
+
+#remove file from unstaged changes
+git reset HEAD filepath
+
+#uml
+Astah Community - UML oriented tool
+
+
+/*siena*/
+
+/*hub*/
+rdesktop -g 1280x965 -u administrator -p QZbsSrbX! 192.168.2.18 &
+/*enterprise*/
+sshpass -p sicksick ssh engineering@192.168.2.21
+/home/engineering/SVP/enterprise-server/webapps/enterprise-server
+/var/opt/SVP/svp-server/log
+/*activemq*/
+sshpass -p sicksick ssh engineering@192.168.2.22
+/*solution-server*/
+sshpass -p sicksick ssh engineering@192.168.2.23
+/*copy from remote*/
+scp engineering@192.168.2.21:/var/opt/SVP/svp-server/log/queries.log ./
+scp -r engineering@192.168.2.21:/home/engineering/SVP/enterprise-server/webapps/enterprise-server ./
+/* to remote*/
+scp test.txt engineering@192.168.2.21:/home/engineering/SVP
