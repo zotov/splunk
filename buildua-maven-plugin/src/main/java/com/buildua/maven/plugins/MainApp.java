@@ -19,8 +19,7 @@ public class MainApp {
 	public static void main(final String[] arg0) throws Exception {
 	   CompressUa cum = new CompressUa();
 	   log.info("cum:{}",cum);
-	   cum.execute();
-		 
+	   cum.execute();		 
 	}
 	
 }
