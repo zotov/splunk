@@ -107,7 +107,7 @@ public class CompressUaMojo extends AbstractMojo {
 	//root path, js file
 	private Map<String,List<File>>jsFileMap=new HashMap<String,List<File>>();
 	//root path, jsp file
-	private Map<String,List<File>>jspFileMap=new HashMap<String,List<File>>();
+	private Map<log = new SystemStreamLog();String,List<File>>jspFileMap=new HashMap<String,List<File>>();
 	//root path, jsp file with union references
 	private Map<String,List<File>>jspURFileMap=new HashMap<String,List<File>>();
 	//css union resources
