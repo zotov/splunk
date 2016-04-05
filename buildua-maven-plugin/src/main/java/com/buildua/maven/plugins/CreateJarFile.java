@@ -1,3 +1,7 @@
+/*
+ * The MIT License (MIT)
+ * Copyright (c) 2016, Zotov Denys Vladimirovich, [Ukraine, Chernihiv, zotov.denys@gmail.com]
+ */
 package com.buildua.maven.plugins;
 
 import java.io.File;
@@ -6,12 +10,28 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
 
+/**
+ * The Class CreateJarFile.
+ *
+ * @author Denys Zotov (http://soft-industry.com)
+ */
 public class CreateJarFile {
-	 ArrayList<String> list =new ArrayList();
-	 public static int BUFFER_SIZE = 10240;
-	  protected void createJarArchive(File archiveFile, File[] tobeJared, String rootDir) {
+	 
+ 	/** The list. */
+ 	ArrayList<String> list =new ArrayList();
+	 
+ 	/** The buffer size. */
+ 	public static int BUFFER_SIZE = 10240;
+	  
+  	/**
+  	 * Creates the jar archive.
+  	 *
+  	 * @param archiveFile the archive file
+  	 * @param tobeJared the tobe jared
+  	 * @param rootDir the root dir
+  	 */
+  	protected void createJarArchive(File archiveFile, File[] tobeJared, String rootDir) {
 	    try {
 	      byte buffer[] = new byte[BUFFER_SIZE];
 	      // Open archive file
