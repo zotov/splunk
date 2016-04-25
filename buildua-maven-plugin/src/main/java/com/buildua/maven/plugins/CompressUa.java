@@ -40,7 +40,8 @@ import org.apache.maven.plugin.logging.*;
  *
  * @author Denys Zotov (http://soft-industry.com)
  */
-public class CompressUa {
+public class CompressUa {//mvn install -DskipTests
+	
 
 	/** The Constant log. */
 	private static final Logger log = LoggerFactory.getLogger(CompressUa.class);
@@ -63,7 +64,7 @@ public class CompressUa {
 	private String srcWarPath = "/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target";
 
 	/** The dst war path. */
-	private String dstWarPath = "/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/tmp";
+	private String dstWarPath = "/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/";
 
 	// private String
 	// jspPageRootDirPath="/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/server-node/WEB-INF/pages";
@@ -103,19 +104,25 @@ public class CompressUa {
 
 	/** The replace src. */
 	private boolean replaceSrc = false;
+	
+	/** The replace src. */
+	private boolean removeTmpDir = false;
 
 	/** The delete ur. */
 	private boolean deleteUR = false;
+	
+	/** The use file. */
+	/*compress file*/
+	private boolean compressResource = true;
 
 	/** The use min file. */
-	/*skip compress*/
 	private boolean useMinFile = false;
 	
 	/** The union jsp. */
-	private boolean unionJsp = false;
+	private boolean unionJsp = true;
 	
 	/** The trim jps. */
-	private boolean trimJps = false;
+	private boolean trimJsp =  false;
 		
 	/** The resources compress. */
 	private String[][] resourcesCompress={}; // {{result.js, script1.js,
@@ -203,7 +210,7 @@ public class CompressUa {
 
 			log.info("Read file:" + srcWarFile.getAbsolutePath());
 			this.createCompressJarFile(srcWarFile, dstWarFile);
-			
+			removeTmpDir();
 		} catch (IOException ex) {
 			log.error("execute", ex);
 		}
@@ -262,7 +269,7 @@ public class CompressUa {
 					}
 				}
 
-				log.debug("jspFileMap size:{}", jspFileMap.size());
+				log.debug("jspFileMap size:{},:{}", jspFileMap.size(),jspFileMap.values().toArray());
 				log.debug("jspWRFileMap size:{]", jspResFileMap.size());
 				log.info("jspInnerFileMap size:{}", jspInnerFileMap.size());
 				//log.info("jspInnerFileMap size:{}, content:{}", jspInnerFileMap.size(), Arrays.toString(jspInnerFileMap.values().toArray()));
@@ -270,15 +277,17 @@ public class CompressUa {
 				log.debug("jspFileMap size:" + jsFileMap.size());
 				log.debug("cssFileMap size:" + cssFileMap.size());				
 							
-				this.processJspResMap();
+				this.unionJspResourceMap();
 
 				this.compressResource();
 				
 				this.replaceJspUNResources();
+										
+				//this.copyUNRtoTmpDir(true);
 				
 				this.processJspMap(compressJarOutputStream);
 				
-				this.copyUNRtoJar(compressJarOutputStream, true);
+				this.copyUNRtoJar(compressJarOutputStream, true);				
 				
 				log.info("Compress end successful: " + (replaceSrc ? srcFile.getAbsolutePath() : dstFileCompress.getAbsolutePath()));
 
@@ -403,14 +412,16 @@ public class CompressUa {
 			}
 		}	
 		
-		if ("jsp".equals(fileExt)) {		
+		if (this.unionJsp && "jsp".equals(fileExt)) {	
+		   //log.info("jsp:{}",file.getName());
+		   this.copyToTmpDir(file, rootFolderName);
 		   processChildJspFile( rootFolderName,filePath,file,jspFile);	
 		   if(!this.jspFileMap.containsKey(filePath)) {
 			   this.jspFileMap.put(file.getAbsolutePath(), file);
 		   }
 		   return true;
-		}	
-						
+		}
+		
 		return false;
 	}
 	
@@ -457,7 +468,7 @@ public class CompressUa {
 					//if(jspFile.file!=null && !getJspFileInInnerMap(jspFile.file.getAbsolutePath(), jspFile)) {
 					if(jspFile.file != null && !isJspFileInInnerMap(jspFile.file.getAbsolutePath(), jspFile)) {
 					   jspInnerFileMap.put(jspFile.getFile().getAbsolutePath().toString(), jspFile);
-					   this.copyToTmpDir(file, rootFolderName);		
+					   //this.copyToTmpDir(file, rootFolderName);		
 					   log.info("add parent jsp file:{}", jspFile.file.getAbsolutePath());
 					} 
 																			
@@ -465,9 +476,8 @@ public class CompressUa {
 					//childJspFile.setFile(new File(fullPath));
 					childJspFile.setFile(jspChildrenFile);	
 				    childJspFile.setParentJspFile(jspFile);
-					jspFile.addChildJspFile(childJspFile);					
-									
-				    //this.copyToTmpDir(file, rootFolderName);				    
+				    jspFile.addChildJspFile(childJspFile);					
+					 //this.copyToTmpDir(file, rootFolderName);				    
 				    processChildJspFile(rootFolderName, parentFilePath, childJspFile.getFile(), childJspFile);	
 			}
 		}
@@ -570,7 +580,7 @@ public class CompressUa {
 	 *
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void processJspResMap() throws IOException {
+	public void unionJspResourceMap() throws IOException {
 
 		List<String> cssResourceList = new ArrayList<String>();
 		List<String> jsResourceList = new ArrayList<String>();
@@ -631,7 +641,7 @@ public class CompressUa {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	/* store resources to tmp directory t */
-	private void copyToTmpDir(final File file, final String rootFolderName) throws IOException {
+	private File copyToTmpDir(final File file, final String rootFolderName) throws IOException {
 		
 		File tmpPackageDir = this.getTempDir(file, rootFolderName);
 		if (!tmpPackageDir.exists()) {
@@ -642,7 +652,9 @@ public class CompressUa {
 		File tmpFile = FileUtils.getFile(tmpPackageDir, file.getName());
 
 		FileUtils.copyFile(file, tmpFile);
+		
 		log.debug("copy to :"+tmpFile);
+		return tmpFile;
 	}
 	
 	private File getTempDir(final File file, final String rootFolderName) {
@@ -780,6 +792,7 @@ public class CompressUa {
 						}
 						if (ext.equals(".css")) {
 							if (!this.cssURFileList.contains(unionResourceFile)) {
+								//log.info("add union-Resource file={}", unionResourceFile.getAbsolutePath());
 								this.cssURFileList.add(unionResourceFile);
 							}
 						}
@@ -884,18 +897,46 @@ public class CompressUa {
 		
 		//writeJspWithURtoJar(compressJarOutputStream);
 
-		for (File file : this.cssURFileList) {
+		for(File file : this.cssURFileList) {
+			log.info("write union resource to file:{}", file.getAbsolutePath());
 			this.writeEntryToJar(file, compressJarOutputStream, ".css");
 		}
 
-		for (File file : this.jsURFileList) {
+		for(File file : this.jsURFileList) {
 			this.writeEntryToJar(file, compressJarOutputStream, ".js");
 		}
 		
 		if(!skipJspUr) {
-		  writeJspWithURtoJar(compressJarOutputStream);
+		   writeJspWithURtoJar(compressJarOutputStream);
 		}
 	}
+	
+	
+	/* copy union resource to jar */
+	public void removeTmpDir()	throws IOException {		
+		if(this.removeTmpDir) {
+		   File  file = new File(this.tmpDir);
+		   FileUtils.deleteQuietly(file);  
+		}		
+	} 
+	
+		
+    /*public void copyUNRtoTmpDir(final boolean skipJspUr)	throws IOException {
+		
+		//writeJspWithURtoJar(compressJarOutputStream);
+
+		for (File file : this.cssURFileList) {
+			this.writeUNResourseToTmpDir(file, ".css");
+		}
+
+		for (File file : this.jsURFileList) {
+			this.writeUNResourseToTmpDir(file, ".js");
+		}
+		
+		if(!skipJspUr) {
+		  this.writeJspWithURtoTmpDir();
+		}
+	}*/
 	
 	
 	/**
@@ -921,6 +962,19 @@ public class CompressUa {
 			}
 		}
 	}
+	
+	
+	/*private void writeJspWithURtoTmpDir() throws IOException {
+		for (List<File> fileList : this.jspURFileMap.values()) {
+			for (File file : fileList) {
+				
+				String path = file.getAbsolutePath();
+				String srcPath = path.replace("UNR.jsp", ".jsp");
+				File fileSrc = new File(srcPath);
+				this.copyToTmpDir(fileSrc,  FilenameUtils.getBaseName(copyPackagePath));
+			}
+		}
+	}*/
 
 	/**
 	 * Write entry to jar.
@@ -942,8 +996,7 @@ public class CompressUa {
 			path = path.replace(ext, "-min" + ext);
 		}
 		
-		String nameEntry = path.substring(path.indexOf(resourceRootDir),
-				path.length());
+		String nameEntry = path.substring(path.indexOf(resourceRootDir), path.length());
 		JarEntry entry = new JarEntry(nameEntry);
 		compressJarOutputStream.putNextEntry(entry);
 
@@ -954,7 +1007,26 @@ public class CompressUa {
 		log.info("add entry:" + nameEntry);
 	}
 	
+	
+	/*private void writeUNResourseToTmpDir(final File srcFile, final String ext_)
+			throws IOException {
+
+		String path = srcFile.getAbsolutePath();
+		String ext = "." + FilenameUtils.getExtension(srcFile.getName());
+
+		if (useMinFile && ext_ != null && ext.equals(ext_)) {
+			path = path.replace(ext, "-min" + ext);
+		}
+
+		this.copyToTmpDir(new File(path),  FilenameUtils.getBaseName(copyPackagePath));
+		
+		log.info("copty resuource to tmp:{}", path);
+	}*/
+	
 	private void processJspMap(final JarOutputStream compressJarOutputStream) throws IOException {
+		if(!this.unionJsp) {
+			return;
+		}
         StringBuffer stringBuffer = new StringBuffer();
 		for(String filepath : jspInnerFileMap.keySet()) {
 			JspFile jspFile = jspInnerFileMap.get(filepath);
@@ -962,7 +1034,7 @@ public class CompressUa {
 			this.writeEntryToJar(jspFile.file, stringBuffer.toString().getBytes(), compressJarOutputStream);
 			
 			log.info("store parentjsp file:{}, length:{}", jspFile.file, stringBuffer.length());
-			stringBuffer.delete(0, stringBuffer.length()-1);
+			stringBuffer.delete(0, stringBuffer.length());
 		}
 		
 		for(File srcFile: this.jspFileMap.values()) {
@@ -970,6 +1042,16 @@ public class CompressUa {
 		    this.writeEntryToJar(srcFile, data, compressJarOutputStream);
 		    log.info("store jsp fileName:{}, length:{}", srcFile.getName(), data.length);
 		}
+	}
+	
+	private String trimJspString(final String line) {
+		
+		if(line.indexOf("<%--")> -1 || line.indexOf("<!--")> -1) {
+			log.debug("find");
+		}
+		String trimLine = line.replaceAll("(<%--.+--%>)", "").replace("<%.*", "").replace(".*%>","")
+				               .replaceAll("(<!--.+-->)", "").replace("<!--*+", "").replace(".*-->","").replace("[0x0D-0x0A]", "");
+	    return trimLine.trim();
 	}
 
 
@@ -996,8 +1078,8 @@ public class CompressUa {
         }
         
         log.info("read content of file:{}",jspFile.file.getName());
-        
-		List<String> fileLines = FileUtils.readLines(jspFile.file, "UTF-8");
+               
+		List<String> fileLines = this.readJspContentFromTmpDir(jspFile.file, tmpDir,FilenameUtils.getBaseName(copyPackagePath));
 	
 		for(String line : fileLines) {			
 			if (line.toLowerCase().matches(jspIncludeFilePattern)) {	
@@ -1011,7 +1093,16 @@ public class CompressUa {
 				if(stringBuff.indexOf(line) > -1) {
 					continue;
 				}
-		        stringBuff.append(line + "\r\n");
+				if(this.trimJsp) {
+					if(jspFile.file.getName().equals("index.jsp")) {
+						log.info("index.jsp");
+					}
+				   String trimLine = this.trimJspString(line);
+				   stringBuff.append(trimLine);	
+				} else {
+				   stringBuff.append(line + "\r\n");	
+				}
+		       
 		    }		
 		}
 		
@@ -1022,6 +1113,19 @@ public class CompressUa {
 		/*for(JspFile jspChild:jspFile.getChildJspFileList()) {
 			
 		}	*/	
+	}
+	
+	private List<String> readJspContentFromTmpDir(final File file, final String pathTmpDir, final String rootDir) throws IOException {
+		String path = file.getAbsolutePath();
+		int index1 = path.indexOf(rootDir);
+		String tmpFilePath = pathTmpDir + File.separator + path.substring(index1);
+		
+		File tmpFile =  new File(tmpFilePath);
+		//if(tmpFile.exists()) {
+        return FileUtils.readLines(tmpFile, "UTF-8");
+		//}
+		
+		//return  FileUtils.readLines(file, "UTF-8");
 	}
 
 
@@ -1074,6 +1178,7 @@ public class CompressUa {
 		return null;
 	}	*/
 	
+	
 	private File getJspChildJspFileFromTag(final String jspIncludeTag, final File file) {
 		String filePath = file.getAbsolutePath();
 		int index1 = jspIncludeTag.indexOf("WEB-INF");
@@ -1083,7 +1188,8 @@ public class CompressUa {
 		return new File(fullPath);
 	}
 	
-    private File  getJspFileFromTmp(final File file, final String rootFolderName) throws IOException {
+	
+   /* private File  getJspFileFromTmp(final File file, final String rootFolderName) throws IOException {
 		
 		File tmpPackageDir = this.getTempDir(file, rootFolderName);
 		if (!tmpPackageDir.exists()) {
@@ -1095,7 +1201,7 @@ public class CompressUa {
 
 		return tmpFile;
 	
-	}
+	}*/
 
 
 	/**
@@ -1103,8 +1209,11 @@ public class CompressUa {
 	 *
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void compressResource()
-			throws IOException {
+	public void compressResource() throws IOException {
+		
+		if(!this.compressResource) {
+			return;
+		}
 
 		InputStream in = CompressUa.class.getClassLoader().getResourceAsStream(compressorName);
 		byte[] compressFileContentn = IOUtils.toByteArray(in);
@@ -1158,15 +1267,18 @@ public class CompressUa {
 
 		String javaRuntime = "java -jar " + compressFile.getAbsolutePath()
 				+ " --type " + FilenameUtils.getExtension(jsFile.getName())
-				+ " -o " + jsFile.getAbsolutePath().replace(ext, "-min" + ext)
+				+ " -o " + jsFile.getAbsolutePath().replace(ext, (this.useMinFile ? "-min" : "") + ext)
 				+ " --charset UTF-8 " + " -v " + jsFile.getAbsolutePath();
 		log.debug("javaRuntime:"+javaRuntime);
 		Process process = Runtime.getRuntime().exec(javaRuntime);
 
 		// List<String> result = IOUtils.readLines(process.getInputStream());
-		byte[] result = new byte[10240];
+		/*byte[] result = new byte[10240];
 		int i = IOUtils.read(process.getInputStream(), result);
-		log.debug("result i:" + i + "," + new String(result));
+		log.debug("result i:" + i + "," + new String(result));*/
+		
+		byte[] result = IOUtils.toByteArray(process.getInputStream());		
+		log.debug("result i:" + (result == null?"0":result.length) + "," + new String((result == null?new byte[0]:result)));
 	}
 
 	/**
@@ -1527,6 +1639,30 @@ public class CompressUa {
 	 */
 	public void setCompressorName(String compressorName) {
 		this.compressorName = compressorName;
+	}
+
+	public boolean isRemoveTmpDir() {
+		return removeTmpDir;
+	}
+
+	public void setRemoveTmpDir(boolean removeTmpDir) {
+		this.removeTmpDir = removeTmpDir;
+	}
+
+	public boolean isUnionJsp() {
+		return unionJsp;
+	}
+
+	public void setUnionJsp(boolean unionJsp) {
+		this.unionJsp = unionJsp;
+	}
+
+	public boolean isTrimJsp() {
+		return trimJsp;
+	}
+
+	public void setTrimJsp(boolean trimJsp) {
+		this.trimJsp = trimJsp;
 	}
 
 }

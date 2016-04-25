@@ -116,13 +116,22 @@ public class CompressUaMojo extends AbstractMojo {
     @Parameter( defaultValue = "false", name = "replaceSrc", readonly = true, required = false)
     private boolean replaceSrc;
     
+    @Parameter( defaultValue = "false", name = "removeTmpDir", readonly = true, required = false)
+	private boolean removeTmpDir;
+    
     /** The delete ur. */
     @Parameter( defaultValue = "false", name = "deleteUR", readonly = true, required = false)
     boolean deleteUR;
 	
     /** The use min file. */
-    @Parameter( defaultValue = "true",name = "useMinFile", readonly = true, required = false)
+    @Parameter( defaultValue = "false",name = "useMinFile", readonly = true, required = false)
 	boolean useMinFile;
+    
+    @Parameter( defaultValue = "true",name = "useMinFile", readonly = true, required = false)
+   	boolean unionJsp;
+    
+    @Parameter( defaultValue = "false",name = "useMinFile", readonly = true, required = false)
+   	boolean trimJsp;
 		
 	/** The resources compress. */
 	@Parameter(readonly = true, required = false )
@@ -191,6 +200,10 @@ public class CompressUaMojo extends AbstractMojo {
         ca.setDeleteUR(deleteUR);
         ca.setUseMinFile(useMinFile);
         ca.setResourcesCompress(resourcesCompress);
+        ca.setRemoveTmpDir(removeTmpDir);
+        ca.setTrimJsp(trimJsp);
+        ca.setUnionJsp(unionJsp);
+        //ca.setR
 	}
 
 	/**
@@ -524,7 +537,15 @@ public class CompressUaMojo extends AbstractMojo {
 	public void setCompressorName(String compressorName) {
 		this.compressorName = compressorName;
 	}
-		
 
+
+	public boolean getRemoveTmpDir() {
+		return removeTmpDir;
+	}
+
+
+	public void setRemoveTmpDir(boolean removeTmpDir) {
+		this.removeTmpDir = removeTmpDir;
+	}
 	
 }
