@@ -127,10 +127,10 @@ public class CompressUaMojo extends AbstractMojo {
     @Parameter( defaultValue = "false",name = "useMinFile", readonly = true, required = false)
 	boolean useMinFile;
     
-    @Parameter( defaultValue = "true",name = "useMinFile", readonly = true, required = false)
+    @Parameter( defaultValue = "true",name = "unionJsp", readonly = true, required = false)
    	boolean unionJsp;
     
-    @Parameter( defaultValue = "false",name = "useMinFile", readonly = true, required = false)
+    @Parameter( defaultValue = "false",name = "trimJsp", readonly = true, required = false)
    	boolean trimJsp;
 		
 	/** The resources compress. */
