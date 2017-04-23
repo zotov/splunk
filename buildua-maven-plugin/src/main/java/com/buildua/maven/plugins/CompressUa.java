@@ -9,17 +9,18 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
@@ -32,7 +33,6 @@ import org.apache.commons.io.filefilter.FileFileFilter;
 import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.maven.plugin.logging.*;
 
 
 /**
@@ -48,35 +48,36 @@ public class CompressUa {//mvn install -DskipTests
 	
 	//Log log = new SystemStreamLog();
 	
+	private String targetDir = "/home/denis/Projects/map.org.ua/git/projects/Map-Info/target";
+	
+	private String app_name="request-manager";
+	
 	/** The src war name. */
-	private String srcWarName = "server-node.war";
+	private String srcWarName = app_name + ".war";
 
 	/** The dst war name. */
-	private String dstWarName = "server-node-compress.war";
+	private String dstWarName = app_name + ".war"; //+ "-compress.war";
 
 	/** The tmp dir. */
-	private String tmpDir = "/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/tmp";
+	private String tmpDir = targetDir + "/tmp";
 
 	/** The copy package path. */
-	private String copyPackagePath = "/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/server-node/WEB-INF";
+	private String copyPackagePath = targetDir + "/" + app_name + "/WEB-INF";
 
 	/** The src war path. */
-	private String srcWarPath = "/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target";
+	private String srcWarPath = targetDir;
 
 	/** The dst war path. */
-	private String dstWarPath = "/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/";
-
-	// private String
-	// jspPageRootDirPath="/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/server-node/WEB-INF/pages";
-
+	private String dstWarPath = targetDir + "/compress-war/";
+	
 	/** The page path dir. */
-	private String pagePathDir = "/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/server-node/WEB-INF/pages";
+	private String pagePathDir = targetDir + "/" + app_name + "/WEB-INF/pages";
 
 	/** The union css dir path. */
-	private String unionCssDirPath = "/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/tmp/WEB-INF/resources/css/";
+	private String unionCssDirPath = targetDir + "/tmp/WEB-INF/resources/css/";
 
 	/** The union js dir path. */
-	private String unionJsDirPath = "/home/denis/Projects/PLUGIN/workspace/mvn-build-project-plugin/server-node/target/tmp/WEB-INF/resources/js/";
+	private String unionJsDirPath = targetDir + "/tmp/WEB-INF/resources/js/";
 
 	/** The css reference. */
 	private  String cssReference = "<link href=\"${resourceUrl}/css/#\" rel=\"stylesheet\" type=\"text/css\" />";
@@ -96,6 +97,10 @@ public class CompressUa {//mvn install -DskipTests
 	/** The jsp file pattern. */
 	private  String jspIncludeFilePattern = ".*<%@include.+\\.jsp.*%>.*";
 	
+	private String jspCommentPattern="^<%--.+--%>$";
+		
+	//private String cssImageRefePattern="url *\\(\"(\\.\\.\\/)+";
+	
 	/** The resource root dir. */
 	private  String resourceRootDir = "WEB-INF";
 
@@ -103,7 +108,7 @@ public class CompressUa {//mvn install -DskipTests
 	private  String compressorName = "yuicompressor-2.4.8.jar";
 
 	/** The replace src. */
-	private boolean replaceSrc = false;
+	private boolean replaceSrcWar = false;
 	
 	/** The replace src. */
 	private boolean removeTmpDir = false;
@@ -113,13 +118,15 @@ public class CompressUa {//mvn install -DskipTests
 	
 	/** The use file. */
 	/*compress file*/
-	private boolean compressResource = true;
+	private boolean compressResource =  true; //false;
+	
+	private boolean resetReferencesToImagesInCss = true;
 
 	/** The use min file. */
 	private boolean useMinFile = false;
 	
 	/** The union jsp. */
-	private boolean unionJsp = true;
+	private boolean unionJsp = false;
 	
 	/** The trim jps. */
 	private boolean trimJsp =  false;
@@ -147,8 +154,7 @@ public class CompressUa {//mvn install -DskipTests
 	
 	private Map<String, List<File>> jspResFileMap = new HashMap<String, List<File>>();
 
-	/** The jsp inner file map. */
-	//private Map<String, List<File>> jspParrentFileMap = new LinkedHashMap<String, List<File>>();
+	/** The jsp inner file map. */	
 	private Map<String, JspFile> jspInnerFileMap = new HashMap<String, JspFile>();
 	
 	/** The jsp ur file map. */
@@ -195,6 +201,9 @@ public class CompressUa {//mvn install -DskipTests
 			if (dstWarFile.exists()) {
 				boolean result = dstWarFile.delete();
 				log.info("clear dst dir:{}, result:{}", dstWarFile.getAbsoluteFile(), result);
+			}
+			if(!dstWarFile.getParentFile().exists()) {
+			   Files.createDirectories(Paths.get(dstWarFile.getParentFile().getAbsolutePath()));	
 			}
 			dstWarFile.createNewFile();
 
@@ -246,7 +255,7 @@ public class CompressUa {//mvn install -DskipTests
 				if (!copyDir.exists()) {
 					throw new IOException("dir not exists:"	+ copyDir.getAbsolutePath());
 				}
-
+			
 				// Copy resource from srcDir
 				String rootFolderName = FilenameUtils.getBaseName(copyPackagePath);
 				List<File> fileList = (List<File>) FileUtils.listFilesAndDirs(copyDir, FileFileFilter.FILE, DirectoryFileFilter.DIRECTORY);
@@ -255,8 +264,8 @@ public class CompressUa {//mvn install -DskipTests
 					if (file.isFile() && !this.storeForCompress(file, rootFolderName, new JspFile())) {
 						
 						String path = file.getAbsolutePath();
-						// String name = File.separator +
-						// path.substring(path.indexOf(rootName),path.length());
+						log.info("read file from jar, path={}", path);
+						
 						String name = path.substring(path.indexOf(rootFolderName), path.length());
 						JarEntry entry = new JarEntry(name);
 						compressJarOutputStream.putNextEntry(entry);
@@ -269,11 +278,9 @@ public class CompressUa {//mvn install -DskipTests
 					}
 				}
 
-				log.debug("jspFileMap size:{},:{}", jspFileMap.size(),jspFileMap.values().toArray());
+				log.debug("jspFileMap size:{},:{}", jspFileMap.size(), jspFileMap.values().toArray());
 				log.debug("jspWRFileMap size:{]", jspResFileMap.size());
 				log.info("jspInnerFileMap size:{}", jspInnerFileMap.size());
-				//log.info("jspInnerFileMap size:{}, content:{}", jspInnerFileMap.size(), Arrays.toString(jspInnerFileMap.values().toArray()));
-				//log.info("jspParrentFileMap size:" + jspParrentFileMap);
 				log.debug("jspFileMap size:" + jsFileMap.size());
 				log.debug("cssFileMap size:" + cssFileMap.size());				
 							
@@ -282,14 +289,12 @@ public class CompressUa {//mvn install -DskipTests
 				this.compressResource();
 				
 				this.replaceJspUNResources();
-										
-				//this.copyUNRtoTmpDir(true);
-				
+												
 				this.processJspMap(compressJarOutputStream);
 				
-				this.copyUNRtoJar(compressJarOutputStream, true);				
+				this.copyUNRtoJar(compressJarOutputStream, false);				
 				
-				log.info("Compress end successful: " + (replaceSrc ? srcFile.getAbsolutePath() : dstFileCompress.getAbsolutePath()));
+				log.info("Compress end successful: " + (replaceSrcWar ? srcFile.getAbsolutePath() : dstFileCompress.getAbsolutePath()));
 
 			} catch (Exception ex) {
 				log.error("createCompressJarFile", ex);
@@ -302,7 +307,7 @@ public class CompressUa {//mvn install -DskipTests
 			if (srcJarFile != null) {
 				srcJarFile.close();
 			}
-			if (replaceSrc) {
+			if (replaceSrcWar) {
 				FileUtils.deleteQuietly(srcFile);
 				dstFileCompress.renameTo(srcFile);
 			}
@@ -373,8 +378,15 @@ public class CompressUa {//mvn install -DskipTests
 				ArrayList<File> fileList = new ArrayList<File>();
 				fileList.add(file);
 				this.cssFileMap.put(filePath, fileList);
+			}					
+			
+			
+            if(this.resetReferencesToImagesInCss) {
+			   this.resetReferencesToImagesInCss(file);
 			}
-			this.copyToTmpDir(file, rootFolderName);
+            
+            this.copyToTmpDir(file, rootFolderName);
+			
 			return true;
 		}
 
@@ -446,19 +458,15 @@ public class CompressUa {//mvn install -DskipTests
 		boolean detectJspFile = false;
 		//boolean addTojspInnerFileMap = false;
 		for (String line : fileLines) {
-			if (line.toLowerCase().matches(jspIncludeFilePattern)) {
+			String line_=line.trim().toLowerCase();
+			
+			if(!line_.matches(jspCommentPattern) && line_.matches(jspIncludeFilePattern)) {
 				
 				    if(!detectJspFile) {				    	
 				       log.info("detect inner jsp:{}, file:{}", line, FilenameUtils.getName(file.getAbsolutePath()));
 				       detectJspFile=true;
 				    }
-				    									   
-				    /*String fielPath = file.getAbsolutePath();
-					int index1 = line.indexOf("WEB-INF");
-					int index2 = line.indexOf("%",index1);
-					String jspPath = line.substring(index1,index2).replace("\"","").trim();
-					String fullPath = fielPath.substring(0,parentFilePath.indexOf("WEB-INF")) + jspPath;*/	
-										
+				  							
 					File jspChildrenFile = getJspChildJspFileFromTag(line, file);
 					
 					if(jspFile.file ==  null) {
@@ -480,10 +488,10 @@ public class CompressUa {//mvn install -DskipTests
 					 //this.copyToTmpDir(file, rootFolderName);				    
 				    processChildJspFile(rootFolderName, parentFilePath, childJspFile.getFile(), childJspFile);	
 			}
-		}
-				
-		
+		}		
 	}
+	
+	
 	
 	/**
 	 * Checks if is jsp file in inner map.
@@ -503,21 +511,7 @@ public class CompressUa {//mvn install -DskipTests
 		}		
 		return result;
 	}
-	
-	/*private JspFile getJspFileInInnerMap(String filepath, JspFile jspFile_) {
 		
-		if(jspFile_.file == null) {
-			return null;
-		}
-		for(Iterator<String> iterator = jspInnerFileMap.keySet().iterator(); iterator.hasNext();) {
-			JspFile jspFile = jspInnerFileMap.get(iterator.next());
-			JspFile jsp_File = isJspFileHavePath(filepath, jspFile); 
-			if(isJspFileHavePath(filepath, jspFile)) {				
-			  return   jsp_File;			  
-		    }			
-		}		
-		return null;
-	}*/
 	
 	/**
 	 * Checks if is jsp file have path.
@@ -528,9 +522,8 @@ public class CompressUa {//mvn install -DskipTests
 	 */
 	private boolean isJspFileHavePath(String filePath, JspFile jspFile) {
 		
-		if(jspFile.file==null) {
-			return true;
-			
+		if(jspFile.file == null) {
+			return true;			
 		}
 		if(jspFile.file.getAbsolutePath().equals(filePath)) {
 			return true;
@@ -543,37 +536,11 @@ public class CompressUa {//mvn install -DskipTests
 		for(JspFile jspFile_:jspFile.getChildJspFileList()) {
 		   if(isJspFileHavePath(filePath, jspFile_)) {
 		    	return true;
-		    }
-			
-		}
-		
+		    }			
+		}		
 		return false;
     }
-	
-	/**
-	 * Checks if is checks for shared parent.
-	 *
-	 * @param jspFileChild the jsp file child
-	 * @param parent the parent
-	 * @return true, if is checks for shared parent
-	 */
-	/*
-	public JspFile getChildJspFile(JspFile jspFileChild, JspFile parent) {
 		
-		//boolean result=false;
-		if(jspFileChild.parentJspFile.equals(parent)) {
-		   return parent;
-		}
-		JspFile childJspFile  = null;
-		if(jspFileChild.getChildJspFileList() != null) {
-		   for(JspFile jspFileChild_: jspFileChild.getChildJspFileList()) {
-			   childJspFile =  getChildJspFile(jspFileChild_, parent);
-		   }
-		}
-		return childJspFile;
-	}*/
-	
-	
 	
 	/**
 	 * Process jsp map.
@@ -604,7 +571,7 @@ public class CompressUa {//mvn install -DskipTests
 						cssResourceList.add(fileString.substring(index1, index2));
 						if (addUnCss) {
 							addUnCss = false;
-							this.addDeclarationOfUnResource(fileUNR, FilenameUtils.getBaseName(jspFile.getName()),"css");
+							this.addDeclarationOfUnResource(fileUNR, FilenameUtils.getBaseName(jspFile.getName()), "css");
 						}
 						continue;
 					}
@@ -612,11 +579,10 @@ public class CompressUa {//mvn install -DskipTests
 					if (fileString.matches(jsResourceFilePattern)) {
 						index1 = fileString.indexOf("/");
 						index2 = fileString.indexOf(".js") + 3;
-						jsResourceList
-								.add(fileString.substring(index1, index2));
+						jsResourceList.add(fileString.substring(index1, index2));
 						if (addUnJS) {
 							addUnJS = false;
-							this.addDeclarationOfUnResource(fileUNR,FilenameUtils.getBaseName(jspFile.getName()),"js");
+							this.addDeclarationOfUnResource(fileUNR, FilenameUtils.getBaseName(jspFile.getName()), "js");
 						}
 						continue;
 					}
@@ -625,8 +591,8 @@ public class CompressUa {//mvn install -DskipTests
 				log.debug("jsp file:"+jspFile.getAbsolutePath());
 				log.debug("css files:"+cssResourceList);
 				log.debug("js files:"+jsResourceList);
-				this.addResourceContentToUnionResource(jspFile,	this.cssFileMap, cssResourceList, ".css",unionCssDirPath);
-				this.addResourceContentToUnionResource(jspFile, this.jsFileMap,	jsResourceList, ".js",unionJsDirPath);
+				this.addResourceContentToUnionResource(jspFile,	this.cssFileMap, cssResourceList, ".css", unionCssDirPath);
+				this.addResourceContentToUnionResource(jspFile, this.jsFileMap,	jsResourceList, ".js", unionJsDirPath);
 				cssResourceList.clear();
 				jsResourceList.clear();
 			}
@@ -768,7 +734,8 @@ public class CompressUa {//mvn install -DskipTests
 	private void addResourceContentToUnionResource(final File jspFile,
 												   final Map<String, List<File>> resourceFileMap,
 												   final List<String> resourceList,
-												   final String ext,final String unionResourceDir) throws IOException {
+												   final String ext,
+												   final String unionResourceDir) throws IOException {
 
 		String unionResourceFileName = FilenameUtils.getBaseName(jspFile.getName()) + ext;
 		File unionResourceFile = new File(unionResourceDir + "/" + unionResourceFileName);
@@ -777,25 +744,26 @@ public class CompressUa {//mvn install -DskipTests
 		}
 		unionResourceFile.createNewFile();
 
-		for (String jspCssResource : resourceList) {
+		for (String jspResource : resourceList) {
 			boolean endLoop = false;
 			for (List<File> resourceFileList : resourceFileMap.values()) {
 				for (File resourceFile : resourceFileList) {
-					if (resourceFile.getAbsolutePath().contains(jspCssResource)) {
-						FileUtils.writeStringToFile(unionResourceFile,"\r\n/* " + resourceFile.getAbsolutePath() + "*/\r\n", true);
-						FileUtils.writeByteArrayToFile(unionResourceFile,FileUtils.readFileToByteArray(resourceFile),
-								true);
+					if (resourceFile.getAbsolutePath().contains(jspResource)) {
+						FileUtils.writeStringToFile(unionResourceFile, "\r\n/* " + resourceFile.getAbsolutePath() + "*/\r\n", true);						
+						FileUtils.writeByteArrayToFile(unionResourceFile, FileUtils.readFileToByteArray(resourceFile), true);
+						
 						if (ext.equals(".js")) {
 							if (!jsURFileList.contains(unionResourceFile)) {
 								this.jsURFileList.add(unionResourceFile);
 							}
+							
 						}
 						if (ext.equals(".css")) {
 							if (!this.cssURFileList.contains(unionResourceFile)) {
 								//log.info("add union-Resource file={}", unionResourceFile.getAbsolutePath());
 								this.cssURFileList.add(unionResourceFile);
-							}
-						}
+							}						
+						}					
 						endLoop = true;
 						break;
 					}
@@ -907,7 +875,7 @@ public class CompressUa {//mvn install -DskipTests
 		}
 		
 		if(!skipJspUr) {
-		   writeJspWithURtoJar(compressJarOutputStream);
+		   this.writeJspWithURtoJar(compressJarOutputStream);
 		}
 	}
 	
@@ -919,24 +887,6 @@ public class CompressUa {//mvn install -DskipTests
 		   FileUtils.deleteQuietly(file);  
 		}		
 	} 
-	
-		
-    /*public void copyUNRtoTmpDir(final boolean skipJspUr)	throws IOException {
-		
-		//writeJspWithURtoJar(compressJarOutputStream);
-
-		for (File file : this.cssURFileList) {
-			this.writeUNResourseToTmpDir(file, ".css");
-		}
-
-		for (File file : this.jsURFileList) {
-			this.writeUNResourseToTmpDir(file, ".js");
-		}
-		
-		if(!skipJspUr) {
-		  this.writeJspWithURtoTmpDir();
-		}
-	}*/
 	
 	
 	/**
@@ -962,19 +912,7 @@ public class CompressUa {//mvn install -DskipTests
 			}
 		}
 	}
-	
-	
-	/*private void writeJspWithURtoTmpDir() throws IOException {
-		for (List<File> fileList : this.jspURFileMap.values()) {
-			for (File file : fileList) {
-				
-				String path = file.getAbsolutePath();
-				String srcPath = path.replace("UNR.jsp", ".jsp");
-				File fileSrc = new File(srcPath);
-				this.copyToTmpDir(fileSrc,  FilenameUtils.getBaseName(copyPackagePath));
-			}
-		}
-	}*/
+		
 
 	/**
 	 * Write entry to jar.
@@ -1006,22 +944,7 @@ public class CompressUa {//mvn install -DskipTests
 		compressJarOutputStream.flush();
 		log.info("add entry:" + nameEntry);
 	}
-	
-	
-	/*private void writeUNResourseToTmpDir(final File srcFile, final String ext_)
-			throws IOException {
-
-		String path = srcFile.getAbsolutePath();
-		String ext = "." + FilenameUtils.getExtension(srcFile.getName());
-
-		if (useMinFile && ext_ != null && ext.equals(ext_)) {
-			path = path.replace(ext, "-min" + ext);
-		}
-
-		this.copyToTmpDir(new File(path),  FilenameUtils.getBaseName(copyPackagePath));
-		
-		log.info("copty resuource to tmp:{}", path);
-	}*/
+			
 	
 	private void processJspMap(final JarOutputStream compressJarOutputStream) throws IOException {
 		if(!this.unionJsp) {
@@ -1044,14 +967,20 @@ public class CompressUa {//mvn install -DskipTests
 		}
 	}
 	
+	
 	private String trimJspString(final String line) {
 		
 		if(line.indexOf("<%--")> -1 || line.indexOf("<!--")> -1) {
-			log.debug("find");
+			log.debug("find '<%--' or '<!--' ");
 		}
-		String trimLine = line.replaceAll("(<%--.+--%>)", "").replace("<%.*", "").replace(".*%>","")
-				               .replaceAll("(<!--.+-->)", "").replace("<!--*+", "").replace(".*-->","").replace("[0x0D-0x0A]", "");
-	    return trimLine.trim();
+		String trimLine = line.trim().replaceAll("(<%--.+--%>)", "")
+				 					 .replaceAll("(<!--.+-->)", "")
+				                    // .replace("<%.*", "")
+				                    // .replace(".*%>","")
+				                    // .replace("<!--*+", "")
+				                    // .replace(".*-->","")
+				                     .replace("[0x0D-0x0A]", "");
+	    return trimLine;
 	}
 
 
@@ -1081,8 +1010,11 @@ public class CompressUa {//mvn install -DskipTests
                
 		List<String> fileLines = this.readJspContentFromTmpDir(jspFile.file, tmpDir,FilenameUtils.getBaseName(copyPackagePath));
 	
-		for(String line : fileLines) {			
-			if (line.toLowerCase().matches(jspIncludeFilePattern)) {	
+		for(String line : fileLines) {	
+			
+			String line_ = line.trim().toLowerCase();
+			
+			if (!line_.matches(jspCommentPattern) && line_.matches(jspIncludeFilePattern)) {	
 			   File jspChildFile = getJspChildJspFileFromTag(line, jspFile.file);			  
 			   JspFile jspChildrenFile= this.getChildrenJspFile(jspFile,  jspChildFile.getAbsolutePath());
 			   
@@ -1110,9 +1042,7 @@ public class CompressUa {//mvn install -DskipTests
 			this.jspFileMap.remove(jspFile.file.getAbsolutePath());
 			log.info("remove processed file:{}", jspFile.file.getName());
 		}
-		/*for(JspFile jspChild:jspFile.getChildJspFileList()) {
-			
-		}	*/	
+		
 	}
 	
 	private List<String> readJspContentFromTmpDir(final File file, final String pathTmpDir, final String rootDir) throws IOException {
@@ -1151,59 +1081,24 @@ public class CompressUa {//mvn install -DskipTests
 		return null;
 	}
 
-	/*private JspFile isJspFileHasChildren(String filePath, JspFile jspFile) {
 		
-		if(jspFile.file == null) {
-			//return true;
-			return null;
-		}
-		
-		
-		if(jspFile.getChildJspFileList() == null || jspFile.getChildJspFileList().size() < 1) {
-			//return false;
-			return null;
-		}
-		
-		for(JspFile jspFile_ : jspFile.getChildJspFileList()) {
-		    if(isJspFileHavePath(filePath, jspFile_)) {
-		    	return true;
-		    }
-			jspFile = isJspFileHasChildren(filePath, jspFile_); 
-		    if(jspFile != null) {
-		    	return jspFile;
-		    }
-		}
-		
-		//return false;
-		return null;
-	}	*/
-	
-	
 	private File getJspChildJspFileFromTag(final String jspIncludeTag, final File file) {
+		
+		if(jspIncludeTag.trim().matches(jspCommentPattern)){
+			return null;
+		}
+		
 		String filePath = file.getAbsolutePath();
+		
 		int index1 = jspIncludeTag.indexOf("WEB-INF");
-		int index2 = jspIncludeTag.indexOf("%",index1);
-		String jspPath = jspIncludeTag.substring(index1,index2).replace("\"","").trim();
+		int index2 = jspIncludeTag.indexOf("%", index1);		
+		log.info("getJspChildJspFileFromTag, jspIncludeTag={}, index1={}, index={}, filePath={}", jspIncludeTag.trim(), index1, index2,  filePath);
+		String jspPath = jspIncludeTag.substring(index1, index2).replace("\"","").trim();
 		String fullPath = filePath.substring(0,filePath.indexOf("WEB-INF")) + jspPath;	
 		return new File(fullPath);
 	}
 	
 	
-   /* private File  getJspFileFromTmp(final File file, final String rootFolderName) throws IOException {
-		
-		File tmpPackageDir = this.getTempDir(file, rootFolderName);
-		if (!tmpPackageDir.exists()) {
-			if (!tmpPackageDir.mkdirs()) {
-				throw new IOException("cannto create dir:"	+ tmpPackageDir.getAbsolutePath());
-			}
-		}
-		File tmpFile = FileUtils.getFile(tmpPackageDir, file.getName());
-
-		return tmpFile;
-	
-	}*/
-
-
 	/**
 	 * Compress resource.
 	 *
@@ -1226,17 +1121,17 @@ public class CompressUa {//mvn install -DskipTests
 			this.compressResource(jsFile, compressFileContentn, ".js");
 		}
 
-		if (compressFile.exists()) {
+		/*if (compressFile.exists()) {
 			compressFile.delete();
-		}
+		}*/
 
 		for (File cssFile : cssURFileList) {
 			this.compressResource(cssFile, compressFileContentn, ".css");
 		}
 
-		if (compressFile.exists()) {
+		/*if (compressFile.exists()) {
 			compressFile.delete();
-		}
+		}*/
 
 	}
 
@@ -1247,17 +1142,19 @@ public class CompressUa {//mvn install -DskipTests
 	 * @param compressFileContentn the compress file contentn
 	 * @param ext the ext
 	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws InterruptedException 
 	 */
-	private void compressResource(final File jsFile,
-			final byte[] compressFileContentn,final String ext) throws IOException {
+	private void compressResource(final File resourceFile,
+							   	  final byte[] compressFileContentn,
+							   	  final String ext) throws IOException {
 		String baseDir;
-
-		baseDir = FilenameUtils	.getFullPath(jsFile.getAbsolutePath().toString());
-
+        
+		baseDir = FilenameUtils	.getFullPath(resourceFile.getAbsolutePath().toString());
+        log.info("try compress resourceFile={}, compressFile={}", resourceFile.getAbsolutePath(), compressFile.getAbsolutePath());
 		if (!compressFile.getAbsolutePath().contains(baseDir)) {
-			if (compressFile.exists()) {
-				compressFile.delete();
-			}
+			//if (compressFile.exists()) {
+			//	compressFile.delete();
+			//}
 			compressFile = new File(baseDir + File.separator + compressorName);
 			if (!compressFile.exists()) {
 				 compressFile.createNewFile();
@@ -1265,22 +1162,89 @@ public class CompressUa {//mvn install -DskipTests
 			}
 		}
 
-		String javaRuntime = "java -jar " + compressFile.getAbsolutePath()
-				+ " --type " + FilenameUtils.getExtension(jsFile.getName())
-				+ " -o " + jsFile.getAbsolutePath().replace(ext, (this.useMinFile ? "-min" : "") + ext)
-				+ " --charset UTF-8 " + " -v " + jsFile.getAbsolutePath();
-		log.debug("javaRuntime:"+javaRuntime);
-		Process process = Runtime.getRuntime().exec(javaRuntime);
-
-		// List<String> result = IOUtils.readLines(process.getInputStream());
-		/*byte[] result = new byte[10240];
-		int i = IOUtils.read(process.getInputStream(), result);
-		log.debug("result i:" + i + "," + new String(result));*/
+		String javaRuntime = "java -jar \"" + compressFile.getAbsolutePath()
+				+ "\" --type " + FilenameUtils.getExtension(resourceFile.getName())
+				+ " -o \"" + resourceFile.getAbsolutePath().replace(ext, (this.useMinFile ? "-min" : "") + ext)
+				+ "\" --charset UTF-8 " + " -v \"" + resourceFile.getAbsolutePath() +"\" ";
 		
-		byte[] result = IOUtils.toByteArray(process.getInputStream());		
-		log.debug("result i:" + (result == null?"0":result.length) + "," + new String((result == null?new byte[0]:result)));
-	}
+		javaRuntime = "java -jar \"" + compressFile.getAbsolutePath() +"\"";
+		ProcessBuilder pb = new ProcessBuilder("java", "-jar", compressFile.getAbsolutePath(),
+				                       							"--type",  FilenameUtils.getExtension(resourceFile.getName()),
+				                       							"-o", resourceFile.getAbsolutePath().replace(ext, (this.useMinFile ? "-min" : "") + ext),
+				                       							"--charset", "UTF-8",
+				                       							"-v", resourceFile.getAbsolutePath());
+		Process process = pb.start();
+		
+		log.info("javaRuntime=" + javaRuntime);
+		//Process process = Runtime.getRuntime().exec(javaRuntime);
+		
+		InputStream inError = null;	
+		InputStream in = null;	
+		byte[] resultData =null;
+		int sizeBuffer=1024;
+		
+		try {
+			 in = process.getInputStream();
+			 inError = process.getErrorStream(); 
+			 long startTime=System.currentTimeMillis();
+			 while(!process.waitFor(100, TimeUnit.MILLISECONDS)) {			
+				/*in = process.getInputStream();
+				if(in!=null) {
+					int avialableData = in.available();
+					log.info("avialabel data size={}", avialableData);
+					
+					if(avialableData > 0) {
+						sizeBuffer=avialableData;
+						
+					} else {
+						sizeBuffer=1024;
+					}
+					resultData = new byte[sizeBuffer];
+					//in.read(resultData);	
+					in.read();
+					log.info("resultData lenght={}", resultData!=null?resultData.length:null);
+				}
+				//resultData = IOUtils.toByteArray(in);
+				//inError = process.getErrorStream();
+				//byte[] result = IOUtils.toByteArray(inError);
+				 */
+				
+				resultData = IOUtils.toByteArray(inError);
+				log.info("input stream length={} ", (resultData!=null?resultData.length:null));
+				long endTime = System.currentTimeMillis() - startTime;
+				log.info("process={} working {}ms ...", process, endTime);			
+			}
+		} catch (Exception ex) {
+			log.error("error wait of process={}", process, ex.getMessage());
+		} finally {
+			IOUtils.closeQuietly(in);
+			IOUtils.closeQuietly(inError);
+		}
+		
+		log.info("process exit value={}\r\n", process!=null?process.exitValue():null);	
+    }
 
+	
+	private void resetReferencesToImagesInCss(final File cssFile) throws IOException {
+		if(!cssFile.exists()) {
+			log.warn("Warn, resetReferencesToImagesInCss file is not exist={}", cssFile.getAbsolutePath());
+			return;
+		}
+		List<String> strList = FileUtils.readLines(cssFile);
+		List<String> strList_ = new ArrayList<String>();
+		String line_="";
+	    for( String line: strList) {	    	
+	    	if(line.contains("url")) {//line.matches(.+url *\\\\(\\" *(\\\\.\\\\.\\\\/)+.+)
+	    	   line_=line.replaceAll("(\\.\\.\\/)+", "../");	    	  
+	    	   strList_.add(line_);
+	    	   continue;
+	    	}
+	    	strList_.add(line);
+	    }
+		
+	    FileUtils.writeLines(cssFile, strList_, false);
+	}
+	
 	/**
 	 * Gets the copy package path.
 	 *
@@ -1326,6 +1290,7 @@ public class CompressUa {//mvn install -DskipTests
 		return srcWarPath;
 	}
 
+	
 	/**
 	 * Sets the src war path.
 	 *
@@ -1334,25 +1299,18 @@ public class CompressUa {//mvn install -DskipTests
 	public void setSrcWarPath(String srcWarPath) {
 		this.srcWarPath = srcWarPath;
 	}
-
-	/**
-	 * Checks if is replace src.
-	 *
-	 * @return true, if is replace src
-	 */
-	public boolean isReplaceSrc() {
-		return replaceSrc;
+  
+	
+	public boolean getReplaceSrcWar() {
+		return replaceSrcWar;
 	}
 
-	/**
-	 * Sets the replace src.
-	 *
-	 * @param replaceSrc the new replace src
-	 */
-	public void setReplaceSrc(boolean replaceSrc) {
-		this.replaceSrc = replaceSrc;
+	
+	public void setReplaceSrcWar(boolean replaceSrcWar) {
+		this.replaceSrcWar = replaceSrcWar;
 	}
 
+	
 	/**
 	 * Gets the dst war name.
 	 *

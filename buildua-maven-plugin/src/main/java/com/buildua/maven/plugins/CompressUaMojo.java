@@ -113,8 +113,8 @@ public class CompressUaMojo extends AbstractMojo {
     private String compressorName;
 
     /** The replace src. */
-    @Parameter( defaultValue = "false", name = "replaceSrc", readonly = true, required = false)
-    private boolean replaceSrc;
+    @Parameter( defaultValue = "false", name = "replaceSrcWar", readonly = true, required = false)
+    private boolean replaceSrcWar;
     
     @Parameter( defaultValue = "false", name = "removeTmpDir", readonly = true, required = false)
 	private boolean removeTmpDir;
@@ -196,7 +196,7 @@ public class CompressUaMojo extends AbstractMojo {
         ca.setCssResourceFilePattern(cssResourceFilePattern);
         ca.setResourceRootDir(resourceRootDir);
         ca.setCompressorName(compressorName);
-        ca.setReplaceSrc(replaceSrc);
+        ca.setReplaceSrcWar(replaceSrcWar);
         ca.setDeleteUR(deleteUR);
         ca.setUseMinFile(useMinFile);
         ca.setResourcesCompress(resourcesCompress);
@@ -260,23 +260,16 @@ public class CompressUaMojo extends AbstractMojo {
 		this.srcWarPath = srcWarPath;
 	}
 
-	/**
-	 * Checks if is replace src.
-	 *
-	 * @return true, if is replace src
-	 */
-	public boolean isReplaceSrc() {
-		return replaceSrc;
+
+	public boolean isReplaceSrcWar() {
+		return replaceSrcWar;
 	}
 
-	/**
-	 * Sets the replace src.
-	 *
-	 * @param replaceSrc the new replace src
-	 */
-	public void setReplaceSrc(boolean replaceSrc) {
-		this.replaceSrc = replaceSrc;
+
+	public void setReplaceSrcWar(boolean replaceSrcWar) {
+		this.replaceSrcWar = replaceSrcWar;
 	}
+
 
 	/**
 	 * Gets the dst war name.
