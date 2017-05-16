@@ -81,7 +81,9 @@ public class CompressUa {//mvn install -DskipTests
 
 	/** The css reference. */
 	private  String cssReference = "<link href=\"${resourceUrl}/css/#\" rel=\"stylesheet\" type=\"text/css\" />";
-
+	
+	private  String varCssPattern = "^var[a-zA-Z_0-9 ]+=[ '\"]+.+[ '\"]+;$";
+	
 	/** The js reference. */
 	private  String jsReference = "<script src=\"${resourceUrl}/js/#\" type=\"text/javascript\"></script>";
 
@@ -118,7 +120,7 @@ public class CompressUa {//mvn install -DskipTests
 	
 	/** The use file. */
 	/*compress file*/
-	private boolean compressResource =  true; //false;
+	private boolean compressResource =  true;// false;
 	
 	private boolean resetReferencesToImagesInCss = true;
 
@@ -571,7 +573,7 @@ public class CompressUa {//mvn install -DskipTests
 						cssResourceList.add(fileString.substring(index1, index2));
 						if (addUnCss) {
 							addUnCss = false;
-							this.addDeclarationOfUnResource(fileUNR, FilenameUtils.getBaseName(jspFile.getName()), "css");
+							this.addDeclarationOfUnResource(fileUNR, FilenameUtils.getBaseName(jspFile.getName()), "css", fileString);
 						}
 						continue;
 					}
@@ -582,7 +584,7 @@ public class CompressUa {//mvn install -DskipTests
 						jsResourceList.add(fileString.substring(index1, index2));
 						if (addUnJS) {
 							addUnJS = false;
-							this.addDeclarationOfUnResource(fileUNR, FilenameUtils.getBaseName(jspFile.getName()), "js");
+							this.addDeclarationOfUnResource(fileUNR, FilenameUtils.getBaseName(jspFile.getName()), "js", "");
 						}
 						continue;
 					}
@@ -822,11 +824,16 @@ public class CompressUa {//mvn install -DskipTests
 	/* write reference to resource by pattern */
 	public void addDeclarationOfUnResource(final File file,
 										   final String filename,
-										   final String type) throws IOException {
+										   final String type, 
+										   final String fileString) throws IOException {
 		
 		String refer = "";
 		if (type.toLowerCase().equals("css")) {
 			refer = cssReference.replace("#", filename + (useMinFile ? "-min." : ".") + type);
+			
+			if(fileString.trim().matches(varCssPattern)) {
+				refer = fileString.substring(0, fileString.indexOf("=")+1) + "'" + refer + "';"; 
+			}
 		} else {
 			refer = jsReference.replace("#", filename + (useMinFile ? "-min." : ".") + type);
 		}
@@ -1163,11 +1170,15 @@ public class CompressUa {//mvn install -DskipTests
 		}
 
 		String javaRuntime = "java -jar \"" + compressFile.getAbsolutePath()
-				+ "\" --type " + FilenameUtils.getExtension(resourceFile.getName())
-				+ " -o \"" + resourceFile.getAbsolutePath().replace(ext, (this.useMinFile ? "-min" : "") + ext)
-				+ "\" --charset UTF-8 " + " -v \"" + resourceFile.getAbsolutePath() +"\" ";
+										+ "\" --type " + FilenameUtils.getExtension(resourceFile.getName())
+										+ " -o \"" + resourceFile.getAbsolutePath().replace(ext, (this.useMinFile ? "-min" : "") + ext)
+										+ "\" --charset UTF-8 " + " -v \"" + resourceFile.getAbsolutePath() +"\" ";
 		
-		javaRuntime = "java -jar \"" + compressFile.getAbsolutePath() +"\"";
+		//javaRuntime = "java -jar \"" + compressFile.getAbsolutePath() +"\"";
+		
+		//javaRuntime=java -jar "../js/yuicompressor-2.4.8.jar" 
+		//           --type js -o "../js/reportFooter-min.js" 
+		//           --charset UTF-8  -v ".../js/reportFooter.js" 
 		ProcessBuilder pb = new ProcessBuilder("java", "-jar", compressFile.getAbsolutePath(),
 				                       							"--type",  FilenameUtils.getExtension(resourceFile.getName()),
 				                       							"-o", resourceFile.getAbsolutePath().replace(ext, (this.useMinFile ? "-min" : "") + ext),
