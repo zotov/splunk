@@ -53,12 +53,14 @@ public class Main {
 		splitString("її123abc345ююж");
 		splitString("123ППіі345юВж");*/
 		
-		System.out.println(String.format("hello-%s hello-%s", "?", "5" ));
+		//System.out.println(String.format("hello-%s hello-%s", "?", "5" ));
 		
-		compareAlphanum();
+		//compareAlphanum();
+		
+		processResource();
 		
      }
-	
+		
 	static String value="llllllllllllBe preparedi";	 
 	
 	
@@ -115,6 +117,17 @@ public static void compareAlphanum() {
     	   System.out.println(str);
        }       
   }
+
+public static void  processResource() {
+	String refer = "var hrefCss='<link href=\"${resourceUrl}/css/common/styleSPcenter.css\" rel=\"stylesheet\" type=\"text/css\" />';";
+	String pattern = "^var[a-zA-Z_0-9 ]+=[ '\"]+.+[ '\"]+;$";
+	if(refer.matches(pattern)) {
+		refer = refer.substring(0, refer.indexOf("=")+1)+ "'" + refer + "';"; 
+		 System.out.println(refer);
+	} else {
+		 System.out.println("not mutch pattern=" + pattern);
+	}
+}
 
 }
 
