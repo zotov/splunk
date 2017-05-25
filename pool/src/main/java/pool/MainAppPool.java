@@ -32,34 +32,404 @@ public class MainAppPool {
 	public static void testWait(final MainAppPool mapl) throws InterruptedException {
 		
 		  ThreadB b = mapl.new ThreadB();
-	        b.start();
+		  ThreadB2 b2 = mapl.new ThreadB2();
+		  ThreadB1 b1 = mapl.new ThreadB1();
+		  ThreadA a1 = mapl.new ThreadA();
+		  ThreadA a = mapl.new ThreadA();
+		  ThreadC c = mapl.new ThreadC();
+		  Data d =  mapl.new  Data();
+		  Data b3 =  mapl.new  Data();
+	      //b.start();
+		  a.title="ThreadA";
+		  a1.title="ThreadA1";
+		  
+		  a.b1=b;
+		  a1.b1=b;
+		  a.d=d;
+		  a1.d=d;
+		  //c.b1=b;
+		  //ThreadB b = a.b1;
+		  b.a=a;
+		  b1.a=a;
+		  b2.a=a;
+		  b.start();
+		  b1.start();
+		  b2.start();
+	      //a.start();	    
+	      //a1.start();
+	      //c.start();
 	 
-	        synchronized(b){
-	            try{
+	       /* synchronized(b)
+	        {
+	            try {
+	                System.out.println("synchronized(b)...");
+	               // Thread.sleep(3000);
 	                System.out.println("Waiting for b to complete...");
 	                b.wait();
-	            }catch(InterruptedException e){
+	            } catch(Exception e){
 	                e.printStackTrace();
 	            }
 	 
 	            System.out.println("Total is: " + b.total);
-	        }
+	        }*/
 	       
 	}
 	
+	class ThreadA extends Thread {
+		String title;
+		ThreadB b1= new ThreadB();
+		Thread t;
+		Thread t1;
+		int c=0;
+		Data d = new  Data();
+		 @Override
+		    public void run() {
+			 try {
+				System.out.println(title + " run ");
+				//b2.processData(title);
+				//ThreadB b = d.b2;
+				//d.processData(title, b);
+				
+				//b1.start();
+				t = new Thread(new Runnable(){
+					@Override
+					public void run() {
+						try {
+							processData_();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}						
+					}});
+				
+				t1 = new Thread(new Runnable(){
+					@Override
+					public void run() {
+						try {
+							processData1_();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}						
+					}});
+				t.start();
+				t1.start();
+				Thread.sleep(500);
+				waitStopThreadB();
+				//porcessData();
+				//porcessData(b1);
+				/* synchronized(b1){
+					System.out.println(titel + " synchronized(b1) ");
+		            for(int i=0; i<1000 ; i++){
+		                b1.total += i;
+		                //System.out.println("total: " + b1.total);
+		            }
+		            Thread.sleep(1000);
+		            b1.notify();
+		            System.out.println(titel + " total: " + b1.total);
+		        }*/
+				
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		   }
+		 
+		// public  void waitStopThreadB() throws InterruptedException {
+		 public synchronized void waitStopThreadB() throws InterruptedException {
+			 t.interrupt();
+			 while(t.getState() != Thread.State.TERMINATED) {				
+				 t.join(100);
+				 //t.wait(1000);
+				 
+				 //b1.wait(1000);
+				 System.out.println("t: has termination");
+			 } 
+			 System.out.println("t: has termination yet");			
+		 }
+		 
+		 
+		 public  void processData_() throws InterruptedException  {
+			 //Thread.sleep(2000);
+			 for(int i=0; i<1000000000 ; i++){		    	
+		    	  if(i %100000000 == 0) {
+	                 System.out.println("i = " + i + ", interrupted=" + Thread.currentThread().isInterrupted());
+	              }               
+	         }
+			 processData();			 
+		 }
+
+		 
+		 public synchronized void processData()  {
+			 for(int i=0; i<1000000000 ; i++){		    		
+		    		if(i %100000000 == 0) {	                	
+	                	System.out.println("i1 = " + i);
+	                }
+	               
+	            }
+		 }
+		 
+		 public  void processData1_() throws InterruptedException  {
+			 //Thread.sleep(2000);
+			 for(int i=0; i<100000000 ; i++){		    	
+		    	  if(i %100000000 == 0) {
+	                 System.out.println("k = " + i + ", interrupted=" + Thread.currentThread().isInterrupted());
+	              }               
+	         }
+			 processData1();			 
+		 }
+
+		 
+		 public synchronized void processData1()  {
+			 for(int i=0; i<1000000000 ; i++){		    		
+		    		if(i %100000000 == 0) {	                	
+	                	System.out.println("k1 = " + i );
+	                }
+	               
+	            }
+		 }
+		 
+		 public synchronized void processData2()  {
+			 System.out.println("m1" );
+			 for(int i=0; i<1000000000 ; i++){		    		
+		    		if(i %100000000 == 0) {	                	
+	                	System.out.println("m1 = " + i );
+	                }
+	               
+	            }
+		 }
+		 
+		 
+		 public synchronized void processData3()  {
+			 System.out.println("f1" );
+			 for(int i=0; i<1000000000 ; i++){		    		
+		    		if(i %100000000 == 0) {	                	
+	                	System.out.println("f1 = " + i );
+	                }
+	               
+	            }
+		 }
+		 
+		 
+		 
+		 
+		 
+		 public synchronized void porcessData(ThreadB b) throws InterruptedException {
+			 System.out.println(title + " porcessData(ThreadB b) ");
+			 for(int i=0; i<1000 ; i++){
+	                b.total += i;
+	                //System.out.println("total: " + b.total);
+	         }
+			 Thread.sleep(1000);
+			 System.out.println(title + " total(b): " + b.total);
+			 //b.notify();
+		 }
+		 
+		 public synchronized void porcessData() throws InterruptedException {
+			 System.out.println(title + " porcessData() ");
+			 for(int i=0; i<1000 ; i++){
+	                b1.total += i;
+	                //System.out.println("total: " + b1.total);
+	         }
+			 Thread.sleep(1000);
+			 System.out.println(title + " total: " + b1.total);
+			// b1.notify();
+		 }
+	}
 	
+	
+class ThreadC extends Thread {
+		
+		ThreadB b1= new ThreadB();
+		 @Override
+		    public void run() {
+			 try {
+				System.out.println("ThreadC run ");
+				//porcessData();
+				//porcessData(b1);
+				synchronized(b1){
+					System.out.println("ThreadC synchronized(b1) ");
+		            for(int i=0; i<1000 ; i++){
+		                b1.total += i;
+		                //System.out.println("total: " + b1.total);
+		            }
+		            Thread.sleep(1000);		            
+		            b1.notify();
+		            System.out.println("ThreadC total: " + b1.total);
+		        }
+				
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		   }
+		 
+		 
+		 public synchronized void porcessData(ThreadB b) throws InterruptedException {
+			 System.out.println("ThreadC  porcessData(ThreadB b) ");
+			 for(int i=0; i<1000 ; i++){
+	                b.total += i;
+	                //System.out.println("total: " + b.total);
+	         }
+			 Thread.sleep(1000);
+			 System.out.println("ThreadC total(b): " + b.total);
+			 //b.notify();
+		 }
+		 
+		 public synchronized void porcessData() throws InterruptedException {
+			 System.out.println("ThreadC porcessData()");
+			 for(int i=0; i<1000 ; i++){
+	                b1.total += i;
+	                //System.out.println("total: " + b1.total);
+	         }
+			 Thread.sleep(1000);
+			 
+			 System.out.println("ThreadC total: " + b1.total);
+			 //b1.notify();
+		 }
+	}
+	
+class Data  {
+	ThreadB b2 = new ThreadB ();
+	
+	public synchronized void processData(String title, ThreadB b2) throws InterruptedException {
+		System.out.println(title + " b2 processData()");
+		 for(int i=0; i<1000 ; i++){
+               b2.total += i;
+               //System.out.println("total: " + b1.total);
+        }
+		 Thread.sleep(1000);
+		 
+		 System.out.println(title + " b2 data total: " + b2.total);
+	}
+	
+	
+	public synchronized void processData(String title) throws InterruptedException {
+		System.out.println(title + " b2 processData()");
+		 for(int i=0; i<1000 ; i++){
+               b2.total += i;
+               //System.out.println("total: " + b1.total);
+        }
+		Thread.sleep(1000);
+		 
+		System.out.println(title + " b2 data total: " + b2.total);
+	  }
+   }
+
+
 	class ThreadB extends Thread {
 	    int total=0;
+	    ThreadA a;
 	    @Override
 	    public void run() {
-	        synchronized(this){
+	    	try {
+	    		System.out.println("ThreadB started");
+	    		
+	    		a.processData1();
+				//calculation();
+			} catch (Exception e) {
+				
+				e.printStackTrace();
+			}
+	       /* synchronized(this){
 	            for(int i=0; i<1000 ; i++){
 	                total += i;
 	                System.out.println("total: " + total);
 	            }
 	            notify();
-	        }
+	        }*/
 	   }
+	    
+	    public  void calculation() throws InterruptedException {
+	    	for(int i=0; i<1000000000 ; i++){
+	    		//for(int j=0; i<10 ; j++){
+                
+	    		//}
+	    		//System.out.println("ThreadB i=" + i);
+	    		if(i %100000000 == 0) {
+                	//Thread.sleep(1000);
+                	 System.out.println("i = " + i + ", interrupted=" + Thread.currentThread().isInterrupted());
+                }
+               
+            }
+		 }
+	}
+	
+	class ThreadB1 extends Thread {
+	    int total=0;
+	    ThreadA a;
+	    @Override
+	    public void run() {
+	    	try {
+	    		System.out.println("ThreadB1 started");
+	    		
+	    		a.processData2();
+				//calculation();
+			} catch (Exception e) {
+				
+				e.printStackTrace();
+			}
+	       /* synchronized(this){
+	            for(int i=0; i<1000 ; i++){
+	                total += i;
+	                System.out.println("total: " + total);
+	            }
+	            notify();
+	        }*/
+	   }
+	    
+	    public  void calculation() throws InterruptedException {
+	    	for(int i=0; i<1000000000 ; i++){
+	    		//for(int j=0; i<10 ; j++){
+                
+	    		//}
+	    		//System.out.println("ThreadB i=" + i);
+	    		if(i %100000000 == 0) {
+                	//Thread.sleep(1000);
+                	 System.out.println("i = " + i + ", interrupted=" + Thread.currentThread().isInterrupted());
+                }
+               
+            }
+		 }
+	}
+	
+	
+	class ThreadB2 extends Thread {
+	    int total=0;
+	    ThreadA a;
+	    @Override
+	    public void run() {
+	    	try {
+	    		System.out.println("ThreadB2 started");
+	    		
+	    		a.processData3();
+				//calculation();
+			} catch (Exception e) {
+				
+				e.printStackTrace();
+			}
+	       /* synchronized(this){
+	            for(int i=0; i<1000 ; i++){
+	                total += i;
+	                System.out.println("total: " + total);
+	            }
+	            notify();
+	        }*/
+	   }
+	    
+	    public  void calculation() throws InterruptedException {
+	    	for(int i=0; i<1000000000 ; i++){
+	    		//for(int j=0; i<10 ; j++){
+                
+	    		//}
+	    		//System.out.println("ThreadB i=" + i);
+	    		if(i %100000000 == 0) {
+                	//Thread.sleep(1000);
+                	 System.out.println("i = " + i + ", interrupted=" + Thread.currentThread().isInterrupted());
+                }
+               
+            }
+		 }
 	}
 	
 	
