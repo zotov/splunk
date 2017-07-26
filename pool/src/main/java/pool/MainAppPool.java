@@ -10,6 +10,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import pool.threads.ControllerData;
 import pool.threads.HubRequest;
 import pool.threads.ServicePool;
 
@@ -24,8 +25,9 @@ public class MainAppPool {
 	final static int timeout=100;
 	
 	public static void main(String[]arg0) throws InterruptedException {
+		 startHubRequest();
 		//testRemoveFromConcurrentMap();	    
-		testWait(new MainAppPool());
+		//testWait(new MainAppPool());
 	}
 		
 	
@@ -505,19 +507,66 @@ class Data  {
 	public static void startHubRequest() throws InterruptedException {
 		long startTime = System.currentTimeMillis();
 		final ServicePool s = new ServicePool();
-		int num=10;
+		//int num=10;
+		int num=1;
 		for(int i = 0; i< num;i++){
 			final int index = i;
 			Thread t = new Thread(new Runnable(){
                
 				public void run() {
 					try {
-						s.sendRequests("hub"+index);
+						 ControllerData cd1 = new ControllerData();
+						 ControllerData cd2 = new ControllerData();
+						//s.sendRequests("hub" + index, ControllerData.SIMPLE_METHOD, cd);
+						//s.sendRequests("hub" + index, ControllerData.SYNCHRONIZED_METHOD, cd );
+						// s.sendRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, cd1);
+						//s.sendRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_PARAM_WITH_SYNCHRONIZED_BLOCK);
+						//s.sendRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_CLASS_WITH_STATIC_DATA);
+						//s.sendRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_THIS);
+						 
+						//s.sendTwoRequests("hub" + index, ControllerData.SYNCHRONIZED_METHOD, ControllerData.SIMPLE_METHOD, cd );//-
+						//s.sendTwoRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, ControllerData.SIMPLE_METHOD, cd );//-
+						//s.sendTwoRequests("hub" + index, ControllerData.SYNCHRONIZED_METHOD, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, cd1 );//-
+						//s.sendTwoRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, cd );//+
+						//s.sendTwoRequests("hub" + index, ControllerData.SYNCHRONIZED_METHOD, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_CLASS, cd );//+
+						//s.sendTwoRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_THIS, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, cd );//-
+						//s.sendTwoRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_THIS, ControllerData.SYNCHRONIZED_METHOD, cd1 );//+
+						//s.sendTwoRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_SUBOBJECT, cd1 );//+
+						//s.sendTwoRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, ControllerData.SYNCHRONIZED_SUB_DATA_METHOD, cd1 );//-
+						
+						//s.sendRequests("hub" + index, ControllerData.STATIC_METHOD);
+						//s.sendRequests("hub" + index, ControllerData.SYNCHRONIZED_STATIC_METHOD);						
+						//s.sendRequests("hub" + index, ControllerData.SYNCHRONIZED_STATIC_METHOD_WITH_PARAM);
+						//s.sendRequests("hub" + index, ControllerData.STATIC_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_CLASS);
+						 
+						//s.sendTwoRequests("hub" + index, ControllerData.SYNCHRONIZED_METHOD, ControllerData.SYNCHRONIZED_STATIC_METHOD_WITH_PARAM, cd );//-
+						//s.sendTwoRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, ControllerData.SYNCHRONIZED_STATIC_METHOD_WITH_PARAM, cd );//-
+						//s.sendTwoRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_CLASS, ControllerData.SYNCHRONIZED_STATIC_METHOD_WITH_PARAM, cd );//+
+						// s.sendTwoRequests("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_THIS, ControllerData.SYNCHRONIZED_STATIC_METHOD_WITH_PARAM, cd );//-
+						 
+						 
+						 //s.sendTwoRequestsTwoObjects("hub" + index, ControllerData.SYNCHRONIZED_METHOD, ControllerData.SYNCHRONIZED_METHOD, cd1, cd2 );//-
+						 //s.sendTwoRequestsTwoObjects("hub" + index, ControllerData.SYNCHRONIZED_METHOD, ControllerData.SYNCHRONIZED_METHOD, cd1, cd1 );//+
+						 //s.sendTwoRequestsTwoObjects("hub" + index, ControllerData.SYNCHRONIZED_METHOD, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_THIS, cd1, cd1 );//+
+						 //s.sendTwoRequestsTwoObjects("hub" + index, ControllerData.SYNCHRONIZED_METHOD, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, cd1, cd1 );//-
+						 //s.sendTwoRequestsTwoObjects("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK, cd1, cd1 );//+
+						 //s.sendTwoRequestsTwoObjects("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_THIS, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_THIS, cd1, cd2 );//-
+						 //s.sendTwoRequestsTwoObjects("hub" + index, ControllerData.SYNCHRONIZED_STATIC_METHOD_WITH_PARAM, ControllerData.SYNCHRONIZED_STATIC_METHOD_WITH_PARAM, cd1, cd2 );//+
+						 //s.sendTwoRequestsTwoObjects("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_CLASS, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_CLASS, cd1, cd2 );//+
+						 //s.sendTwoRequestsTwoObjects("hub" + index, ControllerData.SIMPLE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_CLASS, ControllerData.SYNCHRONIZED_STATIC_METHOD_WITH_PARAM, cd1, cd2 );//+
+						 
+						  //s.sendTwoExchangeRequests("hub" + index, ControllerData.SIMPLE_READ,  ControllerData.SIMPLE_WRITE, cd1, 10);
+						  //s.sendTwoExchangeRequests("hub" + index, ControllerData.SIMPLE_READ_METHOD_WITH_SYNCHRONIZED_BLOCK,  ControllerData.SIMPLE_WRITE_METHOD_WITH_SYNCHRONIZED_BLOCK, cd1, 10);
+						  //s.sendTwoExchangeRequests("hub" + index, ControllerData.SIMPLE_READ_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_THIS,  ControllerData.SIMPLE_WRITE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_THIS, cd1, 10);						  
+						  s.sendTwoExchangeRequests("hub" + index, ControllerData.SIMPLE_READ_METHOD_WITH_SYNCHRONIZED_BLOCK,  ControllerData.SIMPLE_WRITE_METHOD_WITH_SYNCHRONIZED_BLOCK_BY_THIS, cd1, 10);
+						  
+						 
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}							
-				}});
+				}
+			});
 			
 			pool.execute(t);
 		}
