@@ -89,6 +89,7 @@
 				<version>3.3</version> <configuration> <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound> 
 				<goalPrefix>compress</goalPrefix> </configuration> </plugin> -->
 			<plugin>
+			    <groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-plugin-plugin</artifactId>
 				<version>3.3</version>
 				<configuration>
@@ -108,11 +109,12 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.3</version>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-					<executable>/usr/lib/jvm/jdk1.6.0_45/bin</executable>
-					<compilerVersion>1.6.0_45</compilerVersion>
+					<source>1.8</source>
+					<target>1.8</target>
+					<executable>/opt/jdk1.8.0_91/bin</executable>
+					<compilerVersion>1.8.0_91</compilerVersion>
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>

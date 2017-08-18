@@ -28,8 +28,24 @@ public class MainAppPool {
 		 startHubRequest();
 		//testRemoveFromConcurrentMap();	    
 		//testWait(new MainAppPool());
+		 
+//		Long i=5L;
+//		testPrimitiveWraps(i);
+//		log.info("2. i={}", i);
+//		
+//		Long j=5L;
+//		testPrimitiveWraps_(j);
+//		log.info("2. j={}", j);
 	}
 		
+	
+    static private void testPrimitiveWraps(Long i) {
+		log.info("1. i={}", ++i);
+	}
+    
+    static private void testPrimitiveWraps_(long j) {
+		log.info("1. j={}", ++j);
+	}
 	
 	public static void testWait(final MainAppPool mapl) throws InterruptedException {
 		
