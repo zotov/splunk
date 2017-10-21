@@ -1,5 +1,10 @@
 package com.soft.industry;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,8 +64,9 @@ public class Main {
 
 		// processResource();
 
-		isMobile();
-
+		//isMobile();
+		
+		serializable();	
 	}
 
 	static String value = "llllllllllllBe preparedi";
@@ -150,6 +156,46 @@ public class Main {
 		m = check2IsDeviceMobile.matcher(header);
 		System.out.println("isMobile2=" + m.matches());
 	}
+	
+	 public static void serializable() throws InterruptedException {
+	        String filename = "A.ser";
+	        
+	        A a = new A();
+
+	        // save the object to file
+	        FileOutputStream fos = null;
+	        ObjectOutputStream out = null;
+	        try {
+	            fos = new FileOutputStream(filename);
+	            out = new ObjectOutputStream(fos);
+	            out.writeObject(a);
+
+	            out.close();
+	        } catch (Exception ex) {
+	            ex.printStackTrace();
+	            Thread.sleep(500);
+	        }
+	        
+	        System.out.println("serializable object=" + a);
+	        Thread.sleep(500);
+	        
+	        // read the object from file
+	        // save the object to file
+	        FileInputStream fis = null;
+	        ObjectInputStream in = null;
+	        try {
+	            fis = new FileInputStream(filename);
+	            in = new ObjectInputStream(fis);
+	            a = (A) in.readObject();
+	            in.close();
+	        } catch (Exception ex) {
+	            ex.printStackTrace();
+	            Thread.sleep(500);
+	        }
+	        System.out.println("deserializable object=" + a);
+	        
+	        
+	    }
 
 }
 
@@ -228,3 +274,47 @@ class AlphanumComparator implements Comparator<String> {
 		return s1Length - s2Length;
 	}
 }
+
+
+
+class A implements Serializable {
+
+	static private String name;
+	private String secondName;
+	transient private Thread t;
+	 private AB ab;
+		
+	public A() {
+		 t = new Thread();
+		//ab= new AB();
+		name="first-name";
+		this.secondName="second-name ";
+		System.out.println("create A class:" + System.currentTimeMillis());
+	}
+	
+	public String toString() {
+		return "class A:" + name  + " " + secondName;
+	}
+	
+	public static String getName( ) {
+		return name;
+	}
+	
+	 class AB {
+		
+	    public AB() {
+		   System.out.println("create AB class:" + System.currentTimeMillis());
+		}
+	}
+}
+
+
+class C {
+	public static void print(){}
+}
+
+
+class D extends C {
+	public static void print(){};
+}
+
