@@ -1,7 +1,9 @@
 package com.soft.industry;
 
+import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -20,7 +22,7 @@ import java.util.regex.Pattern;
  */
 public class Main {
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws Throwable {
 
 		/*
 		 * @SuppressWarnings("resource") ApplicationContext context = new
@@ -66,7 +68,10 @@ public class Main {
 
 		//isMobile();
 		
-		serializable();	
+		//serializable();	
+		//checkException();
+		
+		calcFib(13);
 	}
 
 	static String value = "llllllllllllBe preparedi";
@@ -196,6 +201,56 @@ public class Main {
 	        
 	        
 	    }
+	 
+	 public  static void checkException() throws Throwable {
+		 C c = new C();
+		 D d = new D();
+		 c.print_();
+		 d.print_();
+	 }
+	 
+	 
+	 
+	static  int[] fib_result;
+	
+	public static void calcFib(int n) {
+		fib_result = new int[n+1];		
+		Arrays.fill(fib_result,0);
+		fib_result[1]=1;
+		memo_fib(n);
+		System.out.println(Arrays.toString(fib_result));
+		
+		Arrays.fill(fib_result,0);
+		fib_result[1]=1;
+		dp_fib(n);
+		System.out.println(Arrays.toString(fib_result));
+	}
+
+	public static int  memo_fib( int n) {
+	 int ret=0;
+	   if ( n < 2 ) {		
+	      return n;
+	  }
+	  if ( fib_result[n]  > 0) {
+	      return fib_result[n];
+	}
+	  ret = memo_fib(n - 1) + memo_fib(n - 2);
+	  fib_result[n] = ret;
+	  return ret;
+	}
+	 
+	public static void dp_fib(int n) {
+	     int partial_answers[]={0,1};
+	     int index=2;
+	     while (index <= n) {
+	         fib_result[index]=partial_answers[0] + partial_answers[1];
+	         partial_answers[0]=partial_answers[1];
+	         partial_answers[1]=fib_result[index];
+	         index++;
+	   }
+	}
+	 
+	 
 
 }
 
@@ -282,10 +337,10 @@ class A implements Serializable {
 	static private String name;
 	private String secondName;
 	transient private Thread t;
-	 private AB ab;
+	private AB ab;
 		
 	public A() {
-		 t = new Thread();
+		t = new Thread();
 		//ab= new AB();
 		name="first-name";
 		this.secondName="second-name ";
@@ -300,7 +355,16 @@ class A implements Serializable {
 		return name;
 	}
 	
-	 class AB {
+	 static class AB {
+		 
+		
+		@SafeVarargs
+		static final void m(List<String>... stringLists) {
+			   Object[] array = stringLists;
+			   List<Integer> tmpList = Arrays.asList(42);
+			   array[0] = tmpList; // Semantically invalid, but compiles without warnings
+			   String s = stringLists[0].get(0); // Oh no, ClassCastException at runtime!
+		}
 		
 	    public AB() {
 		   System.out.println("create AB class:" + System.currentTimeMillis());
@@ -309,12 +373,56 @@ class A implements Serializable {
 }
 
 
-class C {
+@SuppressWarnings("rawtypes")
+class C implements Comparator{
 	public static void print(){}
+
+	@Override
+	public int compare(Object o1, Object o2) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	
+	//public void print_()  {
+	public void print_() throws NullPointerException {
+	//public void print_() throws IOException {
+	//public void print_() throws Exception {
+		Exception e = new Exception();
+		IOException ioe=new IOException();
+		//ioe=(IOException) e;
+		e=ioe;		
+		//public void print_() throws Throwable {
+		//public void print_()  throws EOFException{
+		System.out.println("print_ C:" + System.currentTimeMillis());
+		System.out.println("print_ C: ioe=" + ioe + ", " + System.currentTimeMillis());
+		System.out.println("print_ C: e=" + e + ", " + System.currentTimeMillis());
+	}
 }
 
 
 class D extends C {
+	
 	public static void print(){};
+	
+	public void print1() throws Exception{
+		print_();
+	};
+	
+	@Override
+	public void print_() {	
+    //public void print_() throws RuntimeException {
+	//public void print_() throws Error {
+	//public void print_() throws NullPointerException {
+	//public void print_()  throws EOFException{
+	//public void print_() throws IOException {
+	//public void print_() throws Exception {
+		 System.out.println("print_ D:" + System.currentTimeMillis());
+	}
+	
+	
 }
+
+
+
+
 
